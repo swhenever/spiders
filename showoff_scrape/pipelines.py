@@ -43,8 +43,21 @@ class ShowoffScrapePipeline(object):
 		eventResponse = requests.post(eventEndpoint, data=eventPayload)
 
 		# Make API call to save each of the performers and add each to the event
-		#performerEndpoint = 'http://127.0.0.1:8000/performers/'
-		#for performer in item.performers
+		performerEndpoint = 'http://127.0.0.1:8000/performers/'
+		performerEventListingEndpoint = 'http://127.0.0.1:8000/performer-event-listings/'
+		for i, performer in enumerate(item['performers']):
+			# Save the performer
+			performerPayload = {
+				'name' : performer
+			}
+			performerRequest = requests.post(performerEndpoint, data=performerPayload)
 
+			# Save the Performer Event Listing (ties the performer to the event)
+			performerEventListingPayload = {
+				'performer' : performerRequest.json()['id'],
+				'event' : eventResponse.json()['id'],
+				'order' : i
+			}
+			performerEventListingResponse = requests.post(performerEventListingEndpoint, data=performerEventListingPayload)
 
 		return item
