@@ -15,3 +15,7 @@ NEWSPIDER_MODULE = 'showoff_scrape.spiders'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'showoff_scrape (+http://www.yourdomain.com)'
+
+ITEM_PIPELINES = {
+    'showoff_scrape.pipelines.ShowoffScrapePipeline': 500,
+}

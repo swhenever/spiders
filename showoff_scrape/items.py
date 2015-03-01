@@ -7,8 +7,11 @@
 
 import scrapy
 
+class ShowItem(scrapy.Item):
+    title = scrapy.Field() 
+    start = scrapy.Field() #arrow date obj
+    room = scrapy.Field()
+    url = scrapy.Field()
+    venueUrl = scrapy.Field()
+    performers = scrapy.Field() # array of performer strings
 
-class ShowoffScrapeItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
