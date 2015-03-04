@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import requests
+from scrapy.exceptions import DropItem
 
 # Define your item pipelines here
 #
@@ -42,22 +43,31 @@ class ShowoffScrapePipeline(object):
 		}
 		eventResponse = requests.post(eventEndpoint, data=eventPayload)
 
-		# Make API call to save each of the performers and add each to the event
-		performerEndpoint = 'http://127.0.0.1:8000/performers/'
-		performerEventListingEndpoint = 'http://127.0.0.1:8000/performer-event-listings/'
-		for i, performer in enumerate(item['performers']):
-			# Save the performer
-			performerPayload = {
-				'name' : performer
-			}
-			performerRequest = requests.post(performerEndpoint, data=performerPayload)
+		# does this event already exist?
+		if eventResponse.status_code == 409:
+			raise DropItem("Existing ShowItem found: %s" % item['url'])
 
-			# Save the Performer Event Listing (ties the performer to the event)
-			performerEventListingPayload = {
-				'performer' : performerRequest.json()['id'],
-				'event' : eventResponse.json()['id'],
-				'order' : i
-			}
-			performerEventListingResponse = requests.post(performerEventListingEndpoint, data=performerEventListingPayload)
+		elif eventResponse.status_code == requests.codes.ok:
+			# Make API call to save each of the performers and add each to the event
+			performerEndpoint = 'http://127.0.0.1:8000/performers/'
+			performerEventListingEndpoint = 'http://127.0.0.1:8000/performer-event-listings/'
+			for i, performer in enumerate(item['performers']):
+				# Save the performer
+				performerPayload = {
+					'name' : performer
+				}
+				performerRequest = requests.post(performerEndpoint, data=performerPayload)
 
-		return item
+				# Save the Performer Event Listing (ties the performer to the event)
+				performerEventListingPayload = {
+					'performer' : performerRequest.json()['id'],
+					'event' : eventResponse.json()['id'],
+					'order' : i
+				}
+				performerEventListingResponse = requests.post(performerEventListingEndpoint, data=performerEventListingPayload)
+
+			return item
+
+		else: 
+			# we got an unexpected status code
+			eventResponse.raise_for_status()
