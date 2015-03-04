@@ -52,7 +52,7 @@ class ShowoffScrapePipeline(object):
 			performerEndpoint = 'http://127.0.0.1:8000/performers/'
 			performerEventListingEndpoint = 'http://127.0.0.1:8000/performer-event-listings/'
 			for i, performer in enumerate(item['performers']):
-				# Save the performer
+				# Save the performer. API will return the existing Performer if duplicate is found.
 				performerPayload = {
 					'name' : performer
 				}
