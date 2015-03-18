@@ -8,6 +8,7 @@ class FirstAveSpider(CrawlSpider):
 
     name = 'firstave'
     venueIdentifyingUrl = 'http://www.first-avenue.com'
+    venueLabel = 'First Avenue'
     allowed_domains = ['first-avenue.com']
     start_urls = ['http://first-avenue.com/calendar/all/2015-02']
     rules = [Rule(LinkExtractor(allow=['/event/\d+/\d+/.+']), 'parse_show')] #/event/2015/02/rhettmiller
