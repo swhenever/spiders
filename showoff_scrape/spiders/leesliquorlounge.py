@@ -2,7 +2,7 @@ import scrapy
 from scrapy.selector import Selector
 import arrow
 import re
-from showoff_scrape.items import ShowItem
+from showoff_scrape.items import *
 from scrapy.shell import inspect_response
 
 class LeesLiquorLoungeSpider(scrapy.Spider):

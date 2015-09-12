@@ -3,7 +3,7 @@ from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors import LinkExtractor
 import arrow
 import re
-from showoff_scrape.items import ShowItem
+from showoff_scrape.items import *
 from scrapy.shell import inspect_response
 
 class TripleRockSpider(CrawlSpider):

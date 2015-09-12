@@ -2,7 +2,7 @@ import scrapy
 from scrapy.spider import BaseSpider
 import arrow
 import json
-from showoff_scrape.items import ShowItem
+from showoff_scrape.items import *
 from scrapy.shell import inspect_response
 
 class HexagonBarSpider(BaseSpider):

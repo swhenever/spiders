@@ -1,7 +1,7 @@
 import scrapy
 from scrapy.selector import Selector
 import arrow
-from showoff_scrape.items import ShowItem
+from showoff_scrape.items import *
 
 class KittyCatKlubSpider(scrapy.Spider):
 

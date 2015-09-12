@@ -19,7 +19,7 @@ class TurfClubSpider(CrawlSpider):
         return VenueIdentifier('Turf Club', 'Saint Paul', 'Minnesota')
 
     def make_venue_section(self):
-        venue_section = VenueSection(self.get_venue_identifier())
+        venue_section = VenueSection(self.make_venue_identifier())
         venue_section.venue_url = 'http://turfclub.net/'
         return venue_section
 
