@@ -20,6 +20,16 @@ class ShowBillSection(object):
         self.source_document = str
         self.other_data = dict
 
+    # Omit properties that not set (built in str or dict) when generating object state
+    # this is used by jsonpickle, so our json representation doesn't have useless properties
+    def __getstate__(self):
+        clone = {}
+        for key, value in self.__dict__.iteritems():
+            if value != str and value != dict:
+                clone[key] = value
+
+        return clone
+
 
 class DiscoverySection(ShowBillSection):
     def __init__(self):
@@ -68,21 +78,21 @@ class PerformanceSection(ShowBillSection):
         self.urls = list
 
 
-class EventBill(object):
+class ShowBill(object):
     def __init__(self, discovery=DiscoverySection, venue=VenueSection, event=EventSection):
         self.discovery_section = discovery
         self.venue_section = venue
         self.event_section = event
 
 
-class ShowBill(EventBill):
+class HipLiveMusicShowBill(ShowBill):
     def __init__(self, discovery=DiscoverySection, venue=VenueSection, event=EventSection, performances=PerformancesSection):
-        EventBill.__init__(self, discovery, venue, event)
+        ShowBill.__init__(self, discovery, venue, event)
         self.performances_section = performances
 
 
 '''
-Build a ShowBill
+Build a HipLiveMusicShowBill
 
 # DISCOVERY
 discovery_section = DiscoverySection()
@@ -133,7 +143,7 @@ lady_lamb.urls = [
 performances_section = PerformancesSection([tallest_man, lady_lamb])
 
 # finally, SHOWBILL
-showbill = ShowBill(discovery_section, venue_section, event_section, performances_section)
+showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances_section)
 '''
 
 '''
