@@ -59,6 +59,7 @@ class EventSection(ShowBillSection):
         self.ticket_purchase_url = str
         self.sold_out = False
         self.event_url = str
+        self.title = str
         self.description = str
 
 
