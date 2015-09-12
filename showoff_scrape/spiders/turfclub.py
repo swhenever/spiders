@@ -2,6 +2,7 @@ import scrapy
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors import LinkExtractor
 import arrow
+import dateutil
 import re
 from showoff_scrape.items import *
 from scrapy.shell import inspect_response
@@ -13,6 +14,9 @@ class TurfClubSpider(CrawlSpider):
     allowed_domains = ['turfclub.net']
     start_urls = ['http://turfclub.net/shows/']
     rules = [Rule(LinkExtractor(allow=['/show/\d\d\d\d-\d\d-.+']), 'parse_show')] #/show/2015-04-traster-pureka/
+
+    # @todo handle daylight savings?
+    timezone = 'US/Central'
 
     # Make venue identifier for this venue-based spider
     def make_venue_identifier(self):
@@ -54,7 +58,8 @@ class TurfClubSpider(CrawlSpider):
         date_string = self.kill_unicode_and_strip(date_string[0])
         time_string = response.css('div.rhp-event-details p.rhp-event-time::text').extract()
         time_string = self.kill_unicode_and_strip(time_string[0])
-        date = arrow.get(date_string + " " + time_string, 'dddd, MMMM D, YYYY h:mm a')
+        combined_string = date_string + " " + time_string
+        date = arrow.get(combined_string, 'dddd, MMMM D, YYYY h:mm a').replace(tzinfo=dateutil.tz.gettz(self.timezone))
         event_section.doors_datetime = date
 
         # PERFORMERS SECTION
@@ -68,7 +73,11 @@ class TurfClubSpider(CrawlSpider):
             performances.append(performance_section)
         performances_section = PerformancesSection(performances)
 
-        # MAKE HIPLIVEMUSICSHOWBILL
+        # MAKE HipLiveMusicShowBill
         showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances_section)
 
-        return showbill
+
+        # Make Scrapy ShowBill container item
+        scrapy_showbill_item = ScrapyShowBillItem(showbill)
+
+        return scrapy_showbill_item

@@ -6,6 +6,7 @@
 # http://doc.scrapy.org/en/latest/topics/items.html
 
 import arrow
+import scrapy
 
 
 class VenueIdentifier(object):
@@ -20,12 +21,15 @@ class ShowBillSection(object):
         self.source_document = str
         self.other_data = dict
 
-    # Omit properties that not set (built in str or dict) when generating object state
+    # Omit properties that not set (built in str, float, dict) when generating object state
     # this is used by jsonpickle, so our json representation doesn't have useless properties
     def __getstate__(self):
         clone = {}
         for key, value in self.__dict__.iteritems():
-            if value != str and value != dict:
+            if isinstance(value, arrow.arrow.Arrow):
+                clone[key] = value.to('utc').format('YYYY-MM-DDTHH:mm:ss.SSS') + 'Z'
+            # @todo the below is dumb
+            elif value != str and value != dict and value != float and value != list and value != arrow.arrow.Arrow:
                 clone[key] = value
 
         return clone
@@ -35,7 +39,7 @@ class DiscoverySection(ShowBillSection):
     def __init__(self):
         ShowBillSection.__init__(self)
         self.found_url = str
-        self.found_datetime = arrow.now()
+        self.found_datetime = arrow.utcnow()
         self.discovered_by = str
 
 
@@ -50,9 +54,9 @@ class VenueSection(ShowBillSection):
 class EventSection(ShowBillSection):
     def __init__(self):
         ShowBillSection.__init__(self)
-        self.doors_datetime = arrow
-        self.start_datetime = arrow
-        self.end_datetime = arrow
+        self.doors_datetime = arrow.arrow.Arrow
+        self.start_datetime = arrow.arrow.Arrow
+        self.end_datetime = arrow.arrow.Arrow
         self.age_restriction = str
         self.ticket_price_doors = float
         self.ticket_price_advance = float
@@ -75,7 +79,7 @@ class PerformanceSection(ShowBillSection):
         self.name = str
         self.description = str
         self.order = int
-        self.time = arrow
+        self.time = arrow.arrow.Arrow
         self.urls = list
 
 
@@ -91,6 +95,13 @@ class HipLiveMusicShowBill(ShowBill):
         ShowBill.__init__(self, discovery, venue, event)
         self.performances_section = performances
 
+
+class ScrapyShowBillItem(scrapy.Item):
+    showbill = scrapy.Field()
+
+    def __init__(self, showbill):
+        scrapy.Item.__init__(self)
+        self['showbill'] = showbill
 
 '''
 Build a HipLiveMusicShowBill
