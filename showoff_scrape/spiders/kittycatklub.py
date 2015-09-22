@@ -6,11 +6,27 @@ from showoff_scrape.items import *
 class KittyCatKlubSpider(scrapy.Spider):
 
     name = 'kittycatklub'
-    venueIdentifyingUrl = 'http://www.kittycatklub.net'
-    venueLabel = 'Kitty Cat Klub'
     allowed_domains = ['kittycatklub.net']
     start_urls = ['http://www.kittycatklub.net']
     #rules = [Rule(LinkExtractor(allow=['/event/\d+/\d+/.+']), 'parse_show')]
+
+    # @todo handle daylight savings?
+    timezone = 'US/Central'
+
+    # Make venue identifier for this venue-based spider
+    def make_venue_identifier(self):
+        return VenueIdentifier('Kitty Cat Klub', 'Minneapolis', 'Minnesota')
+
+    def make_venue_section(self):
+        venue_section = VenueSection(self.make_venue_identifier())
+        venue_section.venue_url = 'http://www.kittycatklub.net'
+        return venue_section
+
+    def make_discovery_section(self):
+        discovery_section = DiscoverySection()
+        discovery_section.discovered_by = 'kittycatklub.py'
+        return discovery_section
+
 
     def parse(self, response):
     	# Get the month / year that is being displayed
@@ -21,7 +37,9 @@ class KittyCatKlubSpider(scrapy.Spider):
     	defaultTime = '9:00pm' # Kitty Cat Klub doesn't really list times, so we're going to provide one
 
     	# start with an empty show
-    	show = ShowItem()
+    	#show = ShowItem()
+        event_section = EventSection()
+        performances = []
 
     	# kitty cat klub data is in the eighth nested table (!)
     	#tds = response.selector.xpath("//table//table//table//table//table//table//table//table//tr/td/text()").extract();
@@ -53,9 +71,24 @@ class KittyCatKlubSpider(scrapy.Spider):
     			show['performers'] = performers
     			show['title'] = ', '.join(performers)
 
-    		if 'start' in show and 'url' in show and 'performers' in show:
-    			# our show is (almost) fully populated. yield
-    			yield show
+    		if 'start_datetime' in event_section and performances.len > 0:
+    			# our show is (almost) fully populated, so yield
+                # DISCOVERY SECTION
+                discovery_section = self.make_discovery_section()
+                discovery_section.found_url = response.url
+
+                # VENUE SECTION
+                venue_section = self.make_venue_section()
+
+                # MAKE HipLiveMusicShowBill
+                showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances_section)
+
+                # Make Scrapy ShowBill container item
+                scrapy_showbill_item = ScrapyShowBillItem(showbill)
+
+    			yield scrapy_showbill_item
 
     			# initialize a new show
-    			show = ShowItem()
+                event_section = EventSection()
+                performances = []
+    			#show = ShowItem()
