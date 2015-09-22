@@ -27,7 +27,7 @@ class ShowoffScrapePipeline(object):
         item_json = jsonpickle.encode(item['showbill'], unpicklable=False)
 
         # Make API call to save item
-        event_endpoint = 'http://web/showbill/'
+        event_endpoint = 'http://docker.dev/showbill/'
         log.msg("item_json: " + item_json, level=log.DEBUG)
         event_response = requests.post(event_endpoint, data=item_json)
         log.msg('event_response: ' + str(event_response.status_code), level=log.DEBUG)
