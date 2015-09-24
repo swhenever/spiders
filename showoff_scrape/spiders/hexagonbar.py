@@ -8,11 +8,26 @@ from scrapy.shell import inspect_response
 class HexagonBarSpider(BaseSpider):
 
 	name = 'hexagonbar'
-	venueIdentifyingUrl = 'https://www.facebook.com/hexagonbarlivemusic'
-	venueLabel = 'Hexagon Bar'
 	allowed_domains = ['facebook.com']
 	app_access_token = 'CAAGPqlSTsU8BAGBtUx6ZBuKuC9SqZBvmW8yMKkdfGNau7pZAOSYZAWq5FCi89XoLEfUuR0SAoK3lGOvO3WZAmMDI7845sND1G99f8uD9BAvXQ0ZA8wnlBxUTUkUkPInkntk2XdB68zlwxZCmxof3wMevWKKUhfHp9iFo7OGV4I6oyVNwohqRohqyHxCKqGOovuvrsZCzrMElwn7im67rgXbme89S2rivhxAZD'
 	start_urls = ['https://graph.facebook.com/hexagonbarlivemusic/feed?access_token=' + app_access_token]
+
+    # @todo handle daylight savings?
+    timezone = 'US/Central'
+
+    # Make venue identifier for this venue-based spider
+    def make_venue_identifier(self):
+        return VenueIdentifier('Hexagon Bar', 'Minneapolis', 'Minnesota')
+
+    def make_venue_section(self):
+        venue_section = VenueSection(self.make_venue_identifier())
+        venue_section.venue_url = 'https://www.facebook.com/hexagonbarlivemusic/'
+        return venue_section
+
+    def make_discovery_section(self):
+        discovery_section = DiscoverySection()
+        discovery_section.discovered_by = 'hexagonbar.py'
+        return discovery_section
 
 	def parse(self, response):
 		#inspect_response(response, self)
@@ -23,7 +38,7 @@ class HexagonBarSpider(BaseSpider):
 		for feedItem in jsonresponse["data"]:
 			if 'message' in feedItem:
 				if feedItem["message"].find("UPCOMING BANDS") > -1:
-					item = False
+					performances = []
 					# we have a post that might contain events
 					# which might look like:
 					# "WELCOME TO THE FRONT PAGE OF\nHEXAGON LIVE MUSIC AND SPORTS BAR\n2600 27th AVE South, Minneapolis MN 55406\nEstablished in 1934\nUPCOMING BANDS and EVENTS!\n\n FRIDAY MARCH 13th\n\"Cold Colours\"\n\"Attalla (WI)\"\n\"Go Go Slow\"\n\"Wicked Inquisition\"\n\n SATURDAY MARCH 14th\n\"Teenage Moods\"\n\"Heavy Hand (Mke)\"\n\"Rabbit Holes\"\n\"Color TV\"",
@@ -41,23 +56,39 @@ class HexagonBarSpider(BaseSpider):
 
 						if dateFound:
 							# if a showItem exists, then it's time to close it out
-							if item != False:
-								item["title"] = ', '.join(item["performers"])
-								items.append(item)
+							if len(performances) > 0:
+						        # DISCOVERY SECTION
+						        discovery_section = self.make_discovery_section()
+						        discovery_section.found_url = response.url
 
-							# start a new show, give it base properties
-							item = ShowItem()
-							item["performers"] = []
+						        # VENUE SECTION
+						        venue_section = self.make_venue_section()
+
+						        # PERFORMANCES SECTION
+						        performances_section = PerformancesSection(performances)
+
+						        # MAKE HipLiveMusicShowBill
+						        showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances_section)
+
+						        # Make Scrapy ShowBill container item
+						        scrapy_showbill_item = ScrapyShowBillItem(showbill)
+
+								items.append(scrapy_showbill_item)
+
+							# start a new show, begin an empty container for performances
+							performances = []
+
+							# EVENT SECTION
+        					event_section = EventSection()
 							# create a string that is trimmed, drops the last two chars ("th", "rd" etc) and adds year/default time
 							dateString = lowerLine.strip()[:-2] + " " + createdDate.format("YYYY") + " " + defaultTime
 							try:
-								item['start'] = arrow.get(dateString, 'dddd MMMM D YYYY h:mma')
-								item['url'] = self.venueIdentifyingUrl + "/#" + feedItem["id"] + "_" + item["start"].format("YYYY-MM-DD")
+								event_section.start_datetime = arrow.get(dateString, 'dddd MMMM D YYYY h:mma').replace(tzinfo=dateutil.tz.gettz(self.timezone))
 							except arrow.parser.ParserError:
 								# we couldn't parse the date :( maybe a spelling error (frbruary lol)
-								item = False
+								performances = []
 								# @todo - log this failure
-						elif item != False:
+						elif item != False: # @todo START HERE
 							# an item is open, so we expect this line is a performer
 							item["performers"].append(line.strip(' \n\r\t"'))
 					
