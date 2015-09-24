@@ -8,17 +8,30 @@ from scrapy.shell import inspect_response
 class ThreeThirtyOneClubSpider(scrapy.Spider):
 
     name = 'threethirtyoneclub'
-    venueIdentifyingUrl = 'http://www.331.mn'
-    venueLabel = '331 Club'
     allowed_domains = ['331.mn']
     start_urls = ['http://www.331.mn/events.php']
     #rules = [Rule(LinkExtractor(allow=['/event/\d+/\d+/.+']), 'parse_show')]
 
+    # @todo handle daylight savings?
+    timezone = 'US/Central'
+
+    # Make venue identifier for this venue-based spider
+    def make_venue_identifier(self):
+        return VenueIdentifier('331 Club', 'Minneapolis', 'Minnesota')
+
+    def make_venue_section(self):
+        venue_section = VenueSection(self.make_venue_identifier())
+        venue_section.venue_url = 'http://www.331.mn/'
+        return venue_section
+
+    def make_discovery_section(self):
+        discovery_section = DiscoverySection()
+        discovery_section.discovered_by = '331club.py'
+        return discovery_section
+
+
     def parse(self, response):
         #inspect_response(response, self)
-
-    	# start with an empty show
-    	show = ShowItem()
 
         # current year
         year = arrow.now().format('YYYY')
@@ -58,19 +71,36 @@ class ThreeThirtyOneClubSpider(scrapy.Spider):
                         if time.find(":") == -1:
                             time = time.replace("pm", ":00pm")
 
+                        # DISCOVERY SECTION
+                        discovery_section = self.make_discovery_section()
+                        discovery_section.found_url = response.url
+
+                        # VENUE SECTION
+                        venue_section = self.make_venue_section()
+                
+                        # EVENT SECTION
+                        event_section = EventSection()
+                        event_section.start_datetime = arrow.get(month + " " + day + " " + year + " " + time, 'MMMM D YYYY h:mma').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+
                         # assume these are performers
-                        show['performers'] = currentEventLines
-                        show['title'] = ', '.join(currentEventLines)
-                        show['start'] = arrow.get(month + " " + day + " " + year + " " + time, 'MMMM D YYYY h:mma')
-                        # construct a fake anchor + url to use as a unique identifier
-                        url = self.venueIdentifyingUrl + "/#" + year + "-" + month + "-" + day + "-" + time
-                        show['url'] = url
+                        performances = []
+                        for i, performer in enumerate(currentEventLines):
+                            performance_section = PerformanceSection()
+                            performance_section.name = performer
+                            performance_section.order = i
+                            performances.append(performance_section)
+                        performances_section = PerformancesSection(performances)
+
+                        # MAKE HipLiveMusicShowBill
+                        showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances_section)
+
+                        # Make Scrapy ShowBill container item
+                        scrapy_showbill_item = ScrapyShowBillItem(showbill)
 
                         #done
-                        yield show
+                        yield scrapy_showbill_item
 
-                    # whether we've collected lines or not, time to reset the show info
-                    show = ShowItem()
+                    # whether we've collected lines or not, time to reset
                     currentEventLines = []
                 elif len(eventLine.strip()) > 0:
                     # collect this line, it is nonzero and not a time
