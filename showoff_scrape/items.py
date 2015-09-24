@@ -65,6 +65,7 @@ class EventSection(ShowBillSection):
         self.event_url = str
         self.title = str
         self.description = str
+        self.stage = str
 
 
 class PerformancesSection(ShowBillSection):
