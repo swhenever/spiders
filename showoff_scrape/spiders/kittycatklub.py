@@ -51,25 +51,27 @@ class KittyCatKlubSpider(scrapy.Spider):
     			dayString = row.xpath("td").css("span.date::text").extract()[0]
     			dayparts = dayString.split(' ')
     			day = dayparts[0].strip(' \t\n\r')
-    			date = arrow.get(month + " " + day + " " + year + " " + defaultTime, 'MMMM D YYYY h:mma')
-        		show['start'] = date
+    			date = arrow.get(month + " " + day + " " + year + " " + defaultTime, 'MMMM D YYYY h:mma').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+        		#show['start'] = date
+                event_section.start_datetime = date
 
     			# do price processing
     			costString = row.xpath("td").css("span.cost::text").extract()[0]
+                event_section.ticket_price_doors = costString
 
-    			# construct a fake anchor + url to use as a unique identifier
-    			url = self.venueIdentifyingUrl + "/#" + year + "-" + month + "-" + day
-    			show['url'] = url
     		elif len(row.xpath("td[contains(@colspan, '5')]/text()").extract()) > 0:
     			# do performer list processing
-    			performers = []
     			performerStrings = row.xpath("td/text()").extract()
-    			for performerString in performerStrings:
+    			for i, performerString in enumerate(performerStrings):
     				performerString = performerString.strip(' \t\n\r')
     				if len(performerString) > 0:
-    					performers.append(performerString)
-    			show['performers'] = performers
-    			show['title'] = ', '.join(performers)
+                        performance_section = PerformanceSection()
+                        performance_section.name = performerString
+                        performance_section.order = i
+    					performances.append(performance_section)
+    			#show['performers'] = performers
+    			#show['title'] = ', '.join(performers)
+
 
     		if 'start_datetime' in event_section and performances.len > 0:
     			# our show is (almost) fully populated, so yield
@@ -79,6 +81,9 @@ class KittyCatKlubSpider(scrapy.Spider):
 
                 # VENUE SECTION
                 venue_section = self.make_venue_section()
+
+                # PERFORMANCES SECTION
+                performances_section = PerformancesSection(performances)
 
                 # MAKE HipLiveMusicShowBill
                 showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances_section)
