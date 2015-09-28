@@ -29,52 +29,52 @@ class KittyCatKlubSpider(scrapy.Spider):
 
 
     def parse(self, response):
-    	# Get the month / year that is being displayed
-    	monthYearText = response.selector.css("span.headline::text").extract()[0]
-    	parts = monthYearText.split(' ');
-    	month = parts[0].strip(' \t\n\r') # 'March'
-    	year = parts[1].strip(' \t\n\r') # '2015'
-    	defaultTime = '9:00pm' # Kitty Cat Klub doesn't really list times, so we're going to provide one
+        # Get the month / year that is being displayed
+        monthYearText = response.selector.css("span.headline::text").extract()[0]
+        parts = monthYearText.split(' ');
+        month = parts[0].strip(' \t\n\r') # 'March'
+        year = parts[1].strip(' \t\n\r') # '2015'
+        defaultTime = '9:00pm' # Kitty Cat Klub doesn't really list times, so we're going to provide one
 
-    	# start with an empty show
-    	#show = ShowItem()
+        # start with an empty show
+        #show = ShowItem()
         event_section = EventSection()
         performances = []
 
-    	# kitty cat klub data is in the eighth nested table (!)
-    	#tds = response.selector.xpath("//table//table//table//table//table//table//table//table//tr/td/text()").extract();
-    	rowSelectors = response.selector.xpath("//table//table//table//table//table//table//table//table//tr")
-    	for index, row in enumerate(rowSelectors):
-    		# check what "kind" of row this is
-    		if len(row.xpath("td").css("span.date::text").extract()) > 0:
-    			# do date processing
-    			dayString = row.xpath("td").css("span.date::text").extract()[0]
-    			dayparts = dayString.split(' ')
-    			day = dayparts[0].strip(' \t\n\r')
-    			date = arrow.get(month + " " + day + " " + year + " " + defaultTime, 'MMMM D YYYY h:mma').replace(tzinfo=dateutil.tz.gettz(self.timezone))
-        		#show['start'] = date
+        # kitty cat klub data is in the eighth nested table (!)
+        #tds = response.selector.xpath("//table//table//table//table//table//table//table//table//tr/td/text()").extract();
+        rowSelectors = response.selector.xpath("//table//table//table//table//table//table//table//table//tr")
+        for index, row in enumerate(rowSelectors):
+            # check what "kind" of row this is
+            if len(row.xpath("td").css("span.date::text").extract()) > 0:
+                # do date processing
+                dayString = row.xpath("td").css("span.date::text").extract()[0]
+                dayparts = dayString.split(' ')
+                day = dayparts[0].strip(' \t\n\r')
+                date = arrow.get(month + " " + day + " " + year + " " + defaultTime, 'MMMM D YYYY h:mma').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+                #show['start'] = date
                 event_section.start_datetime = date
 
-    			# do price processing
-    			costString = row.xpath("td").css("span.cost::text").extract()[0]
+                # do price processing
+                costString = row.xpath("td").css("span.cost::text").extract()[0]
                 event_section.ticket_price_doors = costString
 
-    		elif len(row.xpath("td[contains(@colspan, '5')]/text()").extract()) > 0:
-    			# do performer list processing
-    			performerStrings = row.xpath("td/text()").extract()
-    			for i, performerString in enumerate(performerStrings):
-    				performerString = performerString.strip(' \t\n\r')
-    				if len(performerString) > 0:
+            elif len(row.xpath("td[contains(@colspan, '5')]/text()").extract()) > 0:
+                # do performer list processing
+                performerStrings = row.xpath("td/text()").extract()
+                for i, performerString in enumerate(performerStrings):
+                    performerString = performerString.strip(' \t\n\r')
+                    if len(performerString) > 0:
                         performance_section = PerformanceSection()
                         performance_section.name = performerString
                         performance_section.order = i
-    					performances.append(performance_section)
-    			#show['performers'] = performers
-    			#show['title'] = ', '.join(performers)
+                        performances.append(performance_section)
+                #show['performers'] = performers
+                #show['title'] = ', '.join(performers)
 
 
-    		if 'start_datetime' in event_section and performances.len > 0:
-    			# our show is (almost) fully populated, so yield
+            if 'start_datetime' in event_section and performances.len > 0:
+                # our show is (almost) fully populated, so yield
                 # DISCOVERY SECTION
                 discovery_section = self.make_discovery_section()
                 discovery_section.found_url = response.url
@@ -91,9 +91,9 @@ class KittyCatKlubSpider(scrapy.Spider):
                 # Make Scrapy ShowBill container item
                 scrapy_showbill_item = ScrapyShowBillItem(showbill)
 
-    			yield scrapy_showbill_item
+                yield scrapy_showbill_item
 
-    			# initialize a new show
+                # initialize a new show
                 event_section = EventSection()
                 performances = []
-    			#show = ShowItem()
+                #show = ShowItem()
