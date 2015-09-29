@@ -1,14 +1,12 @@
 # showthing-scrape
 Spiders for performing arts events, running in the Scrapy framewok (http://scrapy.org/). Spiders make ShowBills that are assigned to items, and items are fed to a pipelne that POSTs them to the engine's /showbill endpoint.
 
-Spider status
-#############
+## Spider status
 
 * turfclub: working!
 * triplerock: working!
 
-Running spiders
-##############
+## Running spiders
 
 * Set up scrapy-dev docker container (following its instructions) and make sure you can run the example spider. In this environment, you can just run "python" to have a python CLI to play with.
 * Set up docker-php-mysql-nginx docker container (following its instructions)
