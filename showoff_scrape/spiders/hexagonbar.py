@@ -1,6 +1,7 @@
 import scrapy
 from scrapy.spider import BaseSpider
 import arrow
+import dateutil
 import json
 from showoff_scrape.items import *
 from scrapy.shell import inspect_response

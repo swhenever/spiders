@@ -2,6 +2,7 @@ import scrapy
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors import LinkExtractor
 import arrow
+import dateutil
 from showoff_scrape.items import *
 
 class FirstAveSpider(CrawlSpider):

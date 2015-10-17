@@ -1,5 +1,6 @@
 import scrapy
 from scrapy.selector import Selector
+from scrapy import log
 import arrow
 import re
 from showoff_scrape.items import *
@@ -22,11 +23,16 @@ class LeesLiquorLoungeSpider(scrapy.Spider):
         venue_section.venue_url = 'http://www.leesliquorlounge.com/'
         return venue_section
 
+    def make_discovery_section(self):
+        discovery_section = DiscoverySection()
+        discovery_section.discovered_by = 'leesliquorlounge.py'
+        return discovery_section
+
     def parse(self, response):
         # inspect_response(response, self)
 
         # regex for "#:##pm" or ""
-        timeRegex = re.compile("[0-9][0-9:]+[ ?]pm")
+        timeRegex = re.compile("[0-9][0-9:]+[ ?][am|pm]+")
 
         # regex for "####" - match a year string
         yearRegex = re.compile("\d\d\d\d")
@@ -63,7 +69,7 @@ class LeesLiquorLoungeSpider(scrapy.Spider):
 
                 # if we have at least one time possibility remaining, then create events
                 # @todo raise an error if number of time possibilities doesn't match number of performers
-                if len(timePossibilities) > 0:
+                if len(goodTimePos) > 0:
                     for pIndex, performer in enumerate(performers):
                         # DISCOVERY SECTION
                         discovery_section = self.make_discovery_section()
@@ -75,9 +81,11 @@ class LeesLiquorLoungeSpider(scrapy.Spider):
                         # EVENT SECTION
                         event_section = EventSection()
                         event_section.event_url = response.url
+                        # log.msg("pIndex: " + str(pIndex) + ", goodTimePos: " + str(goodTimePos) + ", performers: " + str(performers), level=log.DEBUG)
                         timeString = timeRegex.findall(goodTimePos[pIndex])[0]
                         monthString = currentMonthYear.format('MMMM')
                         yearString = currentMonthYear.format('YYYY')
+                        # log.msg("attempted time string:" + monthString + " " + dateString + " " + yearString + " " + timeString.replace(' ', ''), level=log.DEBUG)
                         event_section.start_datetime = arrow.get(monthString + " " + dateString + " " + yearString + " " + timeString.replace(' ', ''), 'MMMM D YYYY h:mma')
 
                         # PERFORMERS SECTION

@@ -1,6 +1,7 @@
 import scrapy
 from scrapy.selector import Selector
 import arrow
+import dateutil
 import re
 from showoff_scrape.items import *
 from scrapy.shell import inspect_response

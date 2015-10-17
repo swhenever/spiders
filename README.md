@@ -3,8 +3,13 @@ Spiders for performing arts events, running in the Scrapy framewok (http://scrap
 
 ## Spider status
 
-* turfclub: working!
+* firstave: working!
+* hexagonbar: NOT working (needs manually-renewed facebook API key)
+* kittycatklub: working!
+* leesliquorlounge: working (limitation: it lists all performances as separate shows, even if they are consecutive)
+* threethirtyoneclub: working!
 * triplerock: working!
+* turfclub: working!
 
 ## Running spiders
 

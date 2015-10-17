@@ -1,6 +1,8 @@
 import scrapy
 from scrapy.selector import Selector
+from scrapy import log
 import arrow
+import dateutil
 from showoff_scrape.items import *
 
 class KittyCatKlubSpider(scrapy.Spider):
@@ -27,17 +29,17 @@ class KittyCatKlubSpider(scrapy.Spider):
         discovery_section.discovered_by = 'kittycatklub.py'
         return discovery_section
 
-
     def parse(self, response):
         # Get the month / year that is being displayed
         monthYearText = response.selector.css("span.headline::text").extract()[0]
-        parts = monthYearText.split(' ');
+        # log.msg("monthYearText: " + monthYearText.strip(), level=log.DEBUG)
+        parts = monthYearText.strip().split(' ')
         month = parts[0].strip(' \t\n\r') # 'March'
         year = parts[1].strip(' \t\n\r') # '2015'
         defaultTime = '9:00pm' # Kitty Cat Klub doesn't really list times, so we're going to provide one
 
         # start with an empty show
-        #show = ShowItem()
+        # show = ShowItem()
         event_section = EventSection()
         performances = []
 
@@ -51,6 +53,7 @@ class KittyCatKlubSpider(scrapy.Spider):
                 dayString = row.xpath("td").css("span.date::text").extract()[0]
                 dayparts = dayString.split(' ')
                 day = dayparts[0].strip(' \t\n\r')
+                # log.msg("attempted time string:" + month + " " + day + " " + year + " " + defaultTime, level=log.DEBUG)
                 date = arrow.get(month + " " + day + " " + year + " " + defaultTime, 'MMMM D YYYY h:mma').replace(tzinfo=dateutil.tz.gettz(self.timezone))
                 #show['start'] = date
                 event_section.start_datetime = date
@@ -69,11 +72,10 @@ class KittyCatKlubSpider(scrapy.Spider):
                         performance_section.name = performerString
                         performance_section.order = i
                         performances.append(performance_section)
-                #show['performers'] = performers
-                #show['title'] = ', '.join(performers)
+                # show['performers'] = performers
+                # show['title'] = ', '.join(performers)
 
-
-            if 'start_datetime' in event_section and performances.len > 0:
+            if hasattr(event_section, 'start_datetime') and len(performances) > 0:
                 # our show is (almost) fully populated, so yield
                 # DISCOVERY SECTION
                 discovery_section = self.make_discovery_section()
