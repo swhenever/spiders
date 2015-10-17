@@ -5,17 +5,25 @@ import re
 from showoff_scrape.items import *
 from scrapy.shell import inspect_response
 
+
 class LeesLiquorLoungeSpider(scrapy.Spider):
 
     name = 'leesliquorlounge'
-    venueIdentifyingUrl = 'http://www.leesliquorlounge.com'
-    venueLabel = 'Lee\'s Liquor Lounge'
     allowed_domains = ['leesliquorlounge.com']
     start_urls = ['http://www.leesliquorlounge.com/calcomplete.html']
-    #rules = [Rule(LinkExtractor(allow=['/event/\d+/\d+/.+']), 'parse_show')]
+    # rules = [Rule(LinkExtractor(allow=['/event/\d+/\d+/.+']), 'parse_show')]
+
+    # Make venue identifier for this venue-based spider
+    def make_venue_identifier(self):
+        return VenueIdentifier('Lee\'s Liquor Lounge', 'Minneapolis', 'Minnesota')
+
+    def make_venue_section(self):
+        venue_section = VenueSection(self.make_venue_identifier())
+        venue_section.venue_url = 'http://www.leesliquorlounge.com/'
+        return venue_section
 
     def parse(self, response):
-        #inspect_response(response, self)
+        # inspect_response(response, self)
 
         # regex for "#:##pm" or ""
         timeRegex = re.compile("[0-9][0-9:]+[ ?]pm")
@@ -57,19 +65,33 @@ class LeesLiquorLoungeSpider(scrapy.Spider):
                 # @todo raise an error if number of time possibilities doesn't match number of performers
                 if len(timePossibilities) > 0:
                     for pIndex, performer in enumerate(performers):
-                        show = ShowItem()
+                        # DISCOVERY SECTION
+                        discovery_section = self.make_discovery_section()
+                        discovery_section.found_url = response.url
 
-                        # assume these are performers
-                        show['performers'] = [performer]
-                        show['title'] = performer
+                        # VENUE SECTION
+                        venue_section = self.make_venue_section()
+
+                        # EVENT SECTION
+                        event_section = EventSection()
+                        event_section.event_url = response.url
                         timeString = timeRegex.findall(goodTimePos[pIndex])[0]
                         monthString = currentMonthYear.format('MMMM')
                         yearString = currentMonthYear.format('YYYY')
-                        show['start'] = arrow.get(monthString + " " + dateString + " " + yearString + " " + timeString.replace(' ', ''), 'MMMM D YYYY h:mma')
-                        # construct a fake anchor + url to use as a unique identifier
-                        url = self.venueIdentifyingUrl + "/#" + yearString + "-" + monthString + "-" + dateString + "-" + timeString.replace(' ', '')
-                        show['url'] = url
+                        event_section.start_datetime = arrow.get(monthString + " " + dateString + " " + yearString + " " + timeString.replace(' ', ''), 'MMMM D YYYY h:mma')
+
+                        # PERFORMERS SECTION
+                        # assume these are performers
+                        performance_section = PerformanceSection()
+                        performance_section.name = performer
+                        performance_section.order = 0
+                        performances_section = PerformancesSection([performance_section])
+
+                        # MAKE HipLiveMusicShowBill
+                        showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances_section)
+
+                        # Make Scrapy ShowBill container item
+                        scrapy_showbill_item = ScrapyShowBillItem(showbill)
 
                         #done
-                        yield show
-
+                        yield scrapy_showbill_item
