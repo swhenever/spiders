@@ -59,7 +59,7 @@ class TurfClubSpider(CrawlSpider):
         time_string = response.css('div.rhp-event-details p.rhp-event-time::text').extract()
         time_string = self.kill_unicode_and_strip(time_string[0])
         combined_string = date_string + " " + time_string
-        date = arrow.get(combined_string, 'dddd, MMMM D, YYYY h:mm a').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+        date = arrow.get(combined_string, [r"\w+, MMMM D, YYYY h:mm a"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
         event_section.doors_datetime = date
 
         # PERFORMERS SECTION
