@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from os.path import join, dirname
+from dotenv import load_dotenv
+
 # Scrapy settings for showoff_scrape project
 #
 # For simplicity, this file contains only the most important settings by
@@ -7,6 +10,10 @@
 #
 #     http://doc.scrapy.org/en/latest/topics/settings.html
 #
+
+# Load environment variables
+dotenv_path = join(dirname(__file__), '.env')
+load_dotenv(dotenv_path)
 
 BOT_NAME = 'showoff_scrape'
 
@@ -19,3 +26,6 @@ NEWSPIDER_MODULE = 'showoff_scrape.spiders'
 ITEM_PIPELINES = {
     'showoff_scrape.pipelines.ShowoffScrapePipeline': 500,
 }
+
+# Location of the engine endpoint for creating showbills
+ENGINE_SHOWBILL_ENDPOINT = os.environ.get("ENGINE_SHOWBILL_ENDPOINT")
