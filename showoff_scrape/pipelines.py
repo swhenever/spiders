@@ -34,12 +34,12 @@ class ShowoffScrapePipeline(object):
         log.msg('showbill_response: ' + str(showbill_response.status_code), level=log.DEBUG)
         
         # does this event already exist?
-        if event_response.status_code == 409:
+        if showbill_response.status_code == 409:
             raise DropItem("Existing ShowBill found: %s" % item.discovery_section.found_url)
         
-        elif event_response.status_code == requests.codes.created:
+        elif showbill_response.status_code == requests.codes.created:
             return item
         
         else:
             # we got an unexpected status code
-            event_response.raise_for_status()
+            showbill_response.raise_for_status()
