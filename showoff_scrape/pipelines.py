@@ -29,11 +29,9 @@ class ShowoffScrapePipeline(object):
 
         # Make API call to save item
         showbill_endpoint = spider.settings['ENGINE_SHOWBILL_ENDPOINT']
-        log.msg("endpoint: " + event_endpoint)
-        # 'http://docker.dev/showbill/'
         log.msg("item_json: " + item_json, level=log.DEBUG)
         showbill_response = requests.post(showbill_endpoint, data=submit_data)
-        log.msg('event_response: ' + str(showbill_response.status_code), level=log.DEBUG)
+        log.msg('showbill_response: ' + str(showbill_response.status_code), level=log.DEBUG)
         
         # does this event already exist?
         if event_response.status_code == 409:
