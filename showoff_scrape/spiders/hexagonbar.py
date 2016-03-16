@@ -22,12 +22,12 @@ class HexagonBarSpider(BaseSpider):
 
     def make_venue_section(self):
         venue_section = VenueSection(self.make_venue_identifier())
-        venue_section.venue_url = 'https://www.facebook.com/hexagonbarlivemusic/'
+        venue_section.venueUrl = 'https://www.facebook.com/hexagonbarlivemusic/'
         return venue_section
 
     def make_discovery_section(self):
         discovery_section = DiscoverySection()
-        discovery_section.discovered_by = 'hexagonbar.py'
+        discovery_section.discoveredBy = 'hexagonbar.py'
         return discovery_section
 
     def parse(self, response):
@@ -60,16 +60,13 @@ class HexagonBarSpider(BaseSpider):
                             if len(performances) > 0:
                                 # DISCOVERY SECTION
                                 discovery_section = self.make_discovery_section()
-                                discovery_section.found_url = response.url
+                                discovery_section.foundUrl = response.url
 
                                 # VENUE SECTION
                                 venue_section = self.make_venue_section()
 
-                                # PERFORMANCES SECTION
-                                performances_section = PerformancesSection(performances)
-
                                 # MAKE HipLiveMusicShowBill
-                                showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances_section)
+                                showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances)
 
                                 # Make Scrapy ShowBill container item
                                 scrapy_showbill_item = ScrapyShowBillItem(showbill)
@@ -84,7 +81,7 @@ class HexagonBarSpider(BaseSpider):
                             # create a string that is trimmed, drops the last two chars ("th", "rd" etc) and adds year/default time
                             dateString = lowerLine.strip()[:-2] + " " + createdDate.format("YYYY") + " " + defaultTime
                             try:
-                                event_section.start_datetime = arrow.get(dateString, [r"\w+ MMMM D YYYY h:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+                                event_section.startDatetime = arrow.get(dateString, [r"\w+ MMMM D YYYY h:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
                             except arrow.parser.ParserError:
                                 # we couldn't parse the date :( maybe a spelling error (frbruary lol)
                                 performances = []

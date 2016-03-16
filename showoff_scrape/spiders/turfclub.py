@@ -24,12 +24,12 @@ class TurfClubSpider(CrawlSpider):
 
     def make_venue_section(self):
         venue_section = VenueSection(self.make_venue_identifier())
-        venue_section.venue_url = 'http://turfclub.net/'
+        venue_section.venueUrl = 'http://turfclub.net/'
         return venue_section
 
     def make_discovery_section(self):
         discovery_section = DiscoverySection()
-        discovery_section.discovered_by = 'turfclub.py'
+        discovery_section.discoveredBy = 'turfclub.py'
         return discovery_section
 
     # kill unicode regex
@@ -42,14 +42,14 @@ class TurfClubSpider(CrawlSpider):
 
         # DISCOVERY SECTION
         discovery_section = self.make_discovery_section()
-        discovery_section.found_url = response.url
+        discovery_section.foundUrl = response.url
 
         # VENUE SECTION
         venue_section = self.make_venue_section()
 
         # EVENT SECTION
         event_section = EventSection()
-        event_section.event_url = response.url
+        event_section.eventUrl = response.url
         name_result = response.css('h2.rhp-event-header a::text').extract()
         event_section.title = self.kill_unicode_and_strip(name_result[0])
 
@@ -60,7 +60,7 @@ class TurfClubSpider(CrawlSpider):
         time_string = self.kill_unicode_and_strip(time_string[0])
         combined_string = date_string + " " + time_string
         date = arrow.get(combined_string, [r"\w+, MMMM D, YYYY h:mm a"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
-        event_section.doors_datetime = date
+        event_section.doorsDatetime = date
 
         # PERFORMERS SECTION
         # find performers
@@ -71,10 +71,9 @@ class TurfClubSpider(CrawlSpider):
             performance_section.name = self.kill_unicode_and_strip(performer)
             performance_section.order = i
             performances.append(performance_section)
-        performances_section = PerformancesSection(performances)
 
         # MAKE HipLiveMusicShowBill
-        showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances_section)
+        showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances)
 
 
         # Make Scrapy ShowBill container item

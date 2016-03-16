@@ -20,12 +20,12 @@ class LeesLiquorLoungeSpider(scrapy.Spider):
 
     def make_venue_section(self):
         venue_section = VenueSection(self.make_venue_identifier())
-        venue_section.venue_url = 'http://www.leesliquorlounge.com/'
+        venue_section.venueUrl = 'http://www.leesliquorlounge.com/'
         return venue_section
 
     def make_discovery_section(self):
         discovery_section = DiscoverySection()
-        discovery_section.discovered_by = 'leesliquorlounge.py'
+        discovery_section.discoveredBy = 'leesliquorlounge.py'
         return discovery_section
 
     def parse(self, response):
@@ -73,27 +73,27 @@ class LeesLiquorLoungeSpider(scrapy.Spider):
                     for pIndex, performer in enumerate(performers):
                         # DISCOVERY SECTION
                         discovery_section = self.make_discovery_section()
-                        discovery_section.found_url = response.url
+                        discovery_section.foundUrl = response.url
 
                         # VENUE SECTION
                         venue_section = self.make_venue_section()
 
                         # EVENT SECTION
                         event_section = EventSection()
-                        event_section.event_url = response.url
+                        event_section.eventUrl = response.url
                         # log.msg("pIndex: " + str(pIndex) + ", goodTimePos: " + str(goodTimePos) + ", performers: " + str(performers), level=log.DEBUG)
                         timeString = timeRegex.findall(goodTimePos[pIndex])[0]
                         monthString = currentMonthYear.format('MMMM')
                         yearString = currentMonthYear.format('YYYY')
                         # log.msg("attempted time string:" + monthString + " " + dateString + " " + yearString + " " + timeString.replace(' ', ''), level=log.DEBUG)
-                        event_section.start_datetime = arrow.get(monthString + " " + dateString + " " + yearString + " " + timeString.replace(' ', ''), 'MMMM D YYYY h:mma')
+                        event_section.startDatetime = arrow.get(monthString + " " + dateString + " " + yearString + " " + timeString.replace(' ', ''), 'MMMM D YYYY h:mma')
 
                         # PERFORMERS SECTION
                         # assume these are performers
                         performance_section = PerformanceSection()
                         performance_section.name = performer
                         performance_section.order = 0
-                        performances_section = PerformancesSection([performance_section])
+                        performances_section = [performance_section]
 
                         # MAKE HipLiveMusicShowBill
                         showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances_section)

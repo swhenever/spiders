@@ -21,12 +21,12 @@ class KittyCatKlubSpider(scrapy.Spider):
 
     def make_venue_section(self):
         venue_section = VenueSection(self.make_venue_identifier())
-        venue_section.venue_url = 'http://www.kittycatklub.net'
+        venue_section.venueUrl = 'http://www.kittycatklub.net'
         return venue_section
 
     def make_discovery_section(self):
         discovery_section = DiscoverySection()
-        discovery_section.discovered_by = 'kittycatklub.py'
+        discovery_section.discoveredBy = 'kittycatklub.py'
         return discovery_section
 
     def parse(self, response):
@@ -56,11 +56,11 @@ class KittyCatKlubSpider(scrapy.Spider):
                 # log.msg("attempted time string:" + month + " " + day + " " + year + " " + defaultTime, level=log.DEBUG)
                 date = arrow.get(month + " " + day + " " + year + " " + defaultTime, 'MMMM D YYYY h:mma').replace(tzinfo=dateutil.tz.gettz(self.timezone))
                 #show['start'] = date
-                event_section.start_datetime = date
+                event_section.startDatetime = date
 
                 # do price processing
                 costString = row.xpath("td").css("span.cost::text").extract()[0]
-                event_section.ticket_price_doors = costString
+                event_section.ticketPriceDoors = costString
 
             elif len(row.xpath("td[contains(@colspan, '5')]/text()").extract()) > 0:
                 # do performer list processing
@@ -75,20 +75,17 @@ class KittyCatKlubSpider(scrapy.Spider):
                 # show['performers'] = performers
                 # show['title'] = ', '.join(performers)
 
-            if hasattr(event_section, 'start_datetime') and len(performances) > 0:
+            if hasattr(event_section, 'startDatetime') and len(performances) > 0:
                 # our show is (almost) fully populated, so yield
                 # DISCOVERY SECTION
                 discovery_section = self.make_discovery_section()
-                discovery_section.found_url = response.url
+                discovery_section.foundUrl = response.url
 
                 # VENUE SECTION
                 venue_section = self.make_venue_section()
 
-                # PERFORMANCES SECTION
-                performances_section = PerformancesSection(performances)
-
                 # MAKE HipLiveMusicShowBill
-                showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances_section)
+                showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances)
 
                 # Make Scrapy ShowBill container item
                 scrapy_showbill_item = ScrapyShowBillItem(showbill)

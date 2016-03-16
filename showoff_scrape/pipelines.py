@@ -35,7 +35,7 @@ class ShowoffScrapePipeline(object):
         
         # does this event already exist?
         if showbill_response.status_code == 409:
-            raise DropItem("Existing ShowBill found: %s" % item.discovery_section.found_url)
+            raise DropItem("Existing ShowBill found: %s" % item.discoverySection.foundUrl)
         
         elif showbill_response.status_code == requests.codes.created:
             return item

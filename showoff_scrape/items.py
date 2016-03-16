@@ -10,16 +10,16 @@ import scrapy
 
 
 class VenueIdentifier(object):
-    def __init__(self, venue_name, venue_city, venue_state):
-        self.venue_name = venue_name
-        self.venue_city = venue_city
-        self.venue_state = venue_state
+    def __init__(self, name, city, state):
+        self.name = name
+        self.city = city
+        self.state = state
 
 
 class ShowBillSection(object):
     def __init__(self):
-        self.source_document = str
-        self.other_data = dict
+        self.sourceDocument = str
+        self.otherData = dict
 
     # Omit properties that not set (built in str, float, dict) when generating object state
     # this is used by jsonpickle, so our json representation doesn't have useless properties
@@ -38,40 +38,32 @@ class ShowBillSection(object):
 class DiscoverySection(ShowBillSection):
     def __init__(self):
         ShowBillSection.__init__(self)
-        self.found_url = str
-        self.found_datetime = arrow.utcnow()
-        self.discovered_by = str
+        self.foundUrl = str
+        self.foundDateTime = arrow.utcnow()
+        self.discoveredBy = str
 
 
 class VenueSection(ShowBillSection):
-    def __init__(self, venue_identifier=VenueIdentifier):
+    def __init__(self, venueIdentifier=VenueIdentifier):
         ShowBillSection.__init__(self)
-        self.venue_identifier = venue_identifier
-        self.room = str
-        self.venue_url = str
+        self.venueIdentifier = venueIdentifier
+        self.stage = str
+        self.venueUrl = str
 
 
 class EventSection(ShowBillSection):
     def __init__(self):
         ShowBillSection.__init__(self)
-        self.doors_datetime = arrow.arrow.Arrow
-        self.start_datetime = arrow.arrow.Arrow
-        self.end_datetime = arrow.arrow.Arrow
-        self.age_restriction = str
-        self.ticket_price_doors = float
-        self.ticket_price_advance = float
-        self.ticket_purchase_url = str
-        self.sold_out = False
-        self.event_url = str
+        self.doorsDatetime = arrow.arrow.Arrow
+        self.startDatetime = arrow.arrow.Arrow
+        self.endDatetime = arrow.arrow.Arrow
+        self.minimumAgeRestriction = int
+        self.ticketPriceDoors = float
+        self.ticketPriceAdvance = float
+        self.soldOut = False
+        self.eventUrl = str
         self.title = str
         self.description = str
-        self.stage = str
-
-
-class PerformancesSection(ShowBillSection):
-    def __init__(self, performance_sections=list):
-        ShowBillSection.__init__(self)
-        self.performance_sections = performance_sections  # this should be a list of PerformanceSections
 
 
 class PerformanceSection(ShowBillSection):
@@ -80,21 +72,21 @@ class PerformanceSection(ShowBillSection):
         self.name = str
         self.description = str
         self.order = int
-        self.time = arrow.arrow.Arrow
+        self.startDateTime = arrow.arrow.Arrow
         self.urls = list
 
 
 class ShowBill(object):
     def __init__(self, discovery=DiscoverySection, venue=VenueSection, event=EventSection):
-        self.discovery_section = discovery
-        self.venue_section = venue
-        self.event_section = event
+        self.discoverySection = discovery
+        self.venueSection = venue
+        self.eventSection = event
 
 
 class HipLiveMusicShowBill(ShowBill):
-    def __init__(self, discovery=DiscoverySection, venue=VenueSection, event=EventSection, performances=PerformancesSection):
+    def __init__(self, discovery=DiscoverySection, venue=VenueSection, event=EventSection, performances=list):
         ShowBill.__init__(self, discovery, venue, event)
-        self.performances_section = performances
+        self.performancesSection = performances
 
 
 class ScrapyShowBillItem(scrapy.Item):
@@ -108,25 +100,24 @@ class ScrapyShowBillItem(scrapy.Item):
 Build a HipLiveMusicShowBill
 
 # DISCOVERY
-discovery_section = DiscoverySection()
-discovery_section.found_url = 'http://first-avenue.com/event/2015/08/tallestmanonearth'
-discovery_section.discovered_by = 'firstave.py'
-discovery_section.source_document = '<html><body>the whole HTML document I found</body></html>'
+discoverySection = DiscoverySection()
+discoverySection.foundUrl = 'http://first-avenue.com/event/2015/08/tallestmanonearth'
+discoverySection.discoveredBy = 'firstave.py'
+discoverySection.sourceDocument = '<html><body>the whole HTML document I found</body></html>'
 
 # VENUE
 venue = VenueIdentifier('First Avenue', 'Minneapolis', 'Minnesota')
 venue_section = VenueSection(venue)
-venue_section.venue_url = 'http://www.first-avenue.com'
+venue_section.venueUrl = 'http://www.first-avenue.com'
 
 # EVENT
 event_section = EventSection()
-event_section.doors_datetime = arrow.get('2015-08-29 20:00:00', 'YYYY-MM-DD HH:mm:ss')
-event_section.age_restriction = '18+'
-event_section.ticket_price_advance = 30.00
-event_section.ticket_price_doors = 30.00
-event_section.ticket_purchase_url = 'https://www.etix.com/ticket/p/2538486/the-tallest-man-on-earth-minneapolis-first-avenue?cobrand=first-avenue'
-event_section.event_url = 'http://first-avenue.com/event/2015/08/tallestmanonearth'
-event_section.other_data = {
+event_section.doorsDatetime = arrow.get('2015-08-29 20:00:00', 'YYYY-MM-DD HH:mm:ss')
+event_section.minimumAgeRestriction = '18+'
+event_section.ticketPriceAdvance = 30.00
+event_section.ticketPriceDoors = 30.00
+event_section.eventUrl = 'http://first-avenue.com/event/2015/08/tallestmanonearth'
+event_section.otherData = {
     'presented_by': ['89.3 The Current', 'City Pages'],
     'poster_image': 'http://first-avenue.com/sites/default/files/images/events/Tallest-Man-on-Earth-on-sale.jpg'
 }
@@ -156,7 +147,7 @@ lady_lamb.urls = [
 performances_section = PerformancesSection([tallest_man, lady_lamb])
 
 # finally, SHOWBILL
-showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances_section)
+showbill = HipLiveMusicShowBill(discoverySection, venue_section, event_section, performances_section)
 '''
 
 '''

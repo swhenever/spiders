@@ -21,32 +21,32 @@ class FirstAveSpider(CrawlSpider):
 
     def make_venue_section(self):
         venue_section = VenueSection(self.make_venue_identifier())
-        venue_section.venue_url = 'http://www.first-avenue.com/'
+        venue_section.venueUrl = 'http://www.first-avenue.com/'
         return venue_section
 
     def make_discovery_section(self):
         discovery_section = DiscoverySection()
-        discovery_section.discovered_by = 'firstave.py'
+        discovery_section.discoveredBy = 'firstave.py'
         return discovery_section
 
     def parse_show(self, response):
         # DISCOVERY SECTION
         discovery_section = self.make_discovery_section()
-        discovery_section.found_url = response.url
+        discovery_section.foundUrl = response.url
 
         # VENUE SECTION
         venue_section = self.make_venue_section()
 
         # EVENT SECTION
         event_section = EventSection()
-        event_section.event_url = response.url
+        event_section.eventUrl = response.url
 
         name_result = response.xpath("//h1[@id='page-title']/text()").extract()
         event_section.title = name_result[0]
 
         stage_string = response.xpath('//div[contains(concat(" ", normalize-space(@class), " "), " field-name-field-event-room ")]/text()').extract()
         if len(stage_string) > 0:
-            event_section.stage = stage_string[0]
+            venue_section.stage = stage_string[0]
         #show['venue'] = 'First Avenue' 
         #venue: #field-name-field-event-venue//a/text() 
         #"room": #field-name-field-event-room/text()
@@ -59,7 +59,7 @@ class FirstAveSpider(CrawlSpider):
         time_string = time_string_parts[1]
 
         date = arrow.get(date_string.strip() + " " + time_string.strip(), [r"\w+, MMMM D, YYYY h:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
-        event_section.doors_datetime = date
+        event_section.doorsDatetime = date
 
         # PERFORMANCES SECTION
         performer_strings = response.xpath('//div[contains(concat(" ", normalize-space(@class), " "), " field-name-field-event-performer ")]//article[contains(concat(" ", normalize-space(@class), " "), " node-performer ")]//h2//a/text()').extract() #field-name-field-event-performer
@@ -69,10 +69,9 @@ class FirstAveSpider(CrawlSpider):
             performance_section.name = performer
             performance_section.order = i
             performances.append(performance_section)
-        performances_section = PerformancesSection(performances)
 
         # MAKE HipLiveMusicShowBill
-        showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances_section)
+        showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances)
 
         # Make Scrapy ShowBill container item
         scrapy_showbill_item = ScrapyShowBillItem(showbill)

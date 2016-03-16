@@ -22,12 +22,12 @@ class ThreeThirtyOneClubSpider(scrapy.Spider):
 
     def make_venue_section(self):
         venue_section = VenueSection(self.make_venue_identifier())
-        venue_section.venue_url = 'http://www.331.mn/'
+        venue_section.venueUrl = 'http://www.331.mn/'
         return venue_section
 
     def make_discovery_section(self):
         discovery_section = DiscoverySection()
-        discovery_section.discovered_by = '331club.py'
+        discovery_section.discoveredBy = '331club.py'
         return discovery_section
 
 
@@ -74,14 +74,14 @@ class ThreeThirtyOneClubSpider(scrapy.Spider):
 
                         # DISCOVERY SECTION
                         discovery_section = self.make_discovery_section()
-                        discovery_section.found_url = response.url
+                        discovery_section.foundUrl = response.url
 
                         # VENUE SECTION
                         venue_section = self.make_venue_section()
                 
                         # EVENT SECTION
                         event_section = EventSection()
-                        event_section.start_datetime = arrow.get(month + " " + day + " " + year + " " + time, 'MMMM D YYYY h:mma').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+                        event_section.startDatetime = arrow.get(month + " " + day + " " + year + " " + time, 'MMMM D YYYY h:mma').replace(tzinfo=dateutil.tz.gettz(self.timezone))
 
                         # assume these are performers
                         performances = []
@@ -90,10 +90,9 @@ class ThreeThirtyOneClubSpider(scrapy.Spider):
                             performance_section.name = performer
                             performance_section.order = i
                             performances.append(performance_section)
-                        performances_section = PerformancesSection(performances)
 
                         # MAKE HipLiveMusicShowBill
-                        showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances_section)
+                        showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances)
 
                         # Make Scrapy ShowBill container item
                         scrapy_showbill_item = ScrapyShowBillItem(showbill)
