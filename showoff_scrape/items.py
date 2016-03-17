@@ -21,7 +21,7 @@ class ShowBillSection(object):
         self.sourceDocument = str
         self.otherData = dict
 
-    # Omit properties that not set (built in str, float, dict) when generating object state
+    # Omit properties that not set (built in str, float, dict, int) when generating object state
     # this is used by jsonpickle, so our json representation doesn't have useless properties
     def __getstate__(self):
         clone = {}
@@ -29,7 +29,7 @@ class ShowBillSection(object):
             if isinstance(value, arrow.arrow.Arrow):
                 clone[key] = value.to('utc').format('YYYY-MM-DDTHH:mm:ss.SSS') + 'Z'
             # @todo the below is dumb
-            elif value != str and value != dict and value != float and value != list and value != arrow.arrow.Arrow:
+            elif value != str and value != dict and value != float and value != int and value != list and value != arrow.arrow.Arrow:
                 clone[key] = value
 
         return clone
