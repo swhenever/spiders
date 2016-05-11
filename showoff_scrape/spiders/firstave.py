@@ -134,7 +134,7 @@ class FirstAveSpider(CrawlSpider):
             purchase_string = response.css('div.field-name-field-event-status div.field-item a.on_sale').xpath('@href').extract()
             if len(purchase_string) > 0:
                 purchase_string = self.kill_unicode_and_strip(purchase_string[0])
-                event_section.ticketUrl = purchase_string
+                event_section.ticketPurchaseUrl = purchase_string
 
         # Ticket Price
         doors_price_string = response.css('div.field-name-field-event-door-price span.price::text').extract()

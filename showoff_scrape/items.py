@@ -60,7 +60,7 @@ class EventSection(ShowBillSection):
         self.minimumAgeRestriction = int
         self.ticketPriceDoors = float
         self.ticketPriceAdvance = float
-        self.ticketUrl = str
+        self.ticketPurchaseUrl = str
         self.soldOut = False
         self.eventUrl = str
         self.title = str
