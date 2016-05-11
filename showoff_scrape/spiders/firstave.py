@@ -12,15 +12,27 @@ class FirstAveSpider(CrawlSpider):
     name = 'firstave'
     allowed_domains = ['first-avenue.com']
     start_urls = ['http://first-avenue.com/calendar']
+
+    # @todo handle daylight savings?
+    timezone = 'US/Central'
+
+    # Avoid following links for past events
+    now = arrow.now(timezone)
+    now_year = now.format('YYYY')
+    year_regex = '(?:' + now_year[:2] + '[' + now_year[2] + '][' + now_year[3] + '-9]|' + now_year[:2] + '[' + str(int(now_year[2]) + 1) + '-9][0-9])'
+    now_month = now.format('MM')
+    if now_month[0] == '0':
+        month_regex = '(?:0[' + now_month[1] + '-9]|1[0-2])'
+    else:
+        month_regex = '1[' + now_month[1] + '-2]'
+
     rules = [
-        Rule(LinkExtractor(allow=['/event/\d+/\d+/.+']), 'parse_show'),
-        Rule(LinkExtractor(allow=['/calendar/all/\d+-\d+']))
+        Rule(LinkExtractor(allow=['/event/' + year_regex + '/' + month_regex + '/.+']), 'parse_show'),
+        Rule(LinkExtractor(allow=['/calendar/all/' + year_regex + '-' + month_regex]))
     ]
     # /event/2015/02/rhettmiller
     # /calendar/all/2016-06
 
-    # @todo handle daylight savings?
-    timezone = 'US/Central'
 
     def get_venue_info(self, venue_name):
         if venue_name == 'First Avenue':
@@ -93,7 +105,7 @@ class FirstAveSpider(CrawlSpider):
         if len(venue_string) > 0:
             venue_section = self.make_venue_section(venue_string)
         else:
-            return False  # Cannot make a Show for this event, because we don't understand its venue
+            return []  # Cannot make a Show for this event, because we don't understand its venue
 
         # EVENT SECTION
         event_section = EventSection()
