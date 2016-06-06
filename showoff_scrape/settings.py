@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-from os.path import join, dirname
-from dotenv import load_dotenv
 
 # Scrapy settings for showoff_scrape project
 #
@@ -11,10 +9,6 @@ from dotenv import load_dotenv
 #
 #     http://doc.scrapy.org/en/latest/topics/settings.html
 #
-
-# Load environment variables
-dotenv_path = join(dirname(__file__), '.env')
-load_dotenv(dotenv_path)
 
 BOT_NAME = 'showoff_scrape'
 
