@@ -62,6 +62,12 @@ class FirstAveSpider(CrawlSpider):
         elif venue_name == 'Icehouse':
             city = 'Minneapolis'
             url = 'http://www.icehousempls.com/'
+        elif venue_name == 'Triple Rock Social Club':
+            city = 'Minneapolis'
+            url = 'http://www.triplerocksocialclub.com/'
+        elif venue_name == 'Surly Brewing Festival Field':
+            city = 'Minneapolis'
+            url = 'http://surlybrewing.com/destination-brewery/'
         else:
             return False
 
@@ -102,8 +108,12 @@ class FirstAveSpider(CrawlSpider):
         # VENUE SECTION
         venue_string = response.css('div.field-name-field-event-venue div.field-item a::text').extract()
         venue_string = self.kill_unicode_and_strip(venue_string[0])
+        stage_string = response.css('div.field-name-field-event-room div.field-item::text').extract()
         if len(venue_string) > 0:
             venue_section = self.make_venue_section(venue_string)
+            if len(stage_string) > 0:
+                stage_string = self.kill_unicode_and_strip(stage_string[0])
+                venue_section.stage = stage_string
         else:
             return []  # Cannot make a Show for this event, because we don't understand its venue
 
