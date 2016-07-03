@@ -51,6 +51,23 @@ class TripleRockSpider(CrawlSpider):
         name_result = response.css('div.event-info h1.headliners::text').extract()
         event_section.title = self.kill_unicode_and_strip(name_result[0])
 
+        # ticket prices
+        # ticket price string is like: $12.00-15.00
+        ticket_price_string = response.css('div.ticket-price h3.price-range::text').extract();
+        ticket_price_string = self.kill_unicode_and_strip(ticket_price_string[0])
+        ticket_prices = ticket_price_string.split('-')
+        if len(ticket_prices) > 1:
+            event_section.ticketPriceAdvance = float(self.kill_unicode_and_strip(ticket_prices[0]).strip('$'))
+            event_section.ticketPriceDoors = float(self.kill_unicode_and_strip(ticket_prices[1]).strip('$'))
+        elif len(ticket_prices) == 1:
+            event_section.ticketPriceDoors = float(self.kill_unicode_and_strip(ticket_prices[0]).strip('$'))
+
+        # ticket purchase URL
+        ticket_purchase_url_string = response.css('h3.ticket-link a.tickets::attr(href)').extract()
+        if len(ticket_purchase_url_string) > 0:
+            ticket_purchase_url_string = self.kill_unicode_and_strip(ticket_purchase_url_string[0])
+            event_section.ticketPurchaseUrl = ticket_purchase_url_string
+
         # parse doors date/time
         datetime_string = response.css('div.event-info h2.times span.start span::attr(title)').extract()
         datetime_string = self.kill_unicode_and_strip(datetime_string[0])
