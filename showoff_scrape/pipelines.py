@@ -11,8 +11,15 @@ from pprint import pprint
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
+class logPipeline(object):
+    def process_item(selfself, item, spider):
+        item_json = jsonpickle.encode(item['showbill'], unpicklable=False)
+        log.msg('Showbill recorded: ' + item_json, level=log.INFO)
 
-class ShowoffScrapePipeline(object):
+        return item
+
+
+class submitShowbillPipeline(object):
 
     def process_item(self, item, spider):
         # this should be a ScrapyShowBillItem
@@ -29,15 +36,15 @@ class ShowoffScrapePipeline(object):
 
         # Make API call to save item
         showbill_endpoint = spider.settings['ENGINE_SHOWBILL_ENDPOINT']
-        log.msg("item_json: " + item_json, level=log.DEBUG)
         showbill_response = requests.post(showbill_endpoint, data=submit_data)
-        log.msg('showbill_response: ' + str(showbill_response.status_code), level=log.DEBUG)
+        log.msg('Submmitted Showbill. Response code: ' + str(showbill_response.status_code), level=log.DEBUG)
         
         # does this event already exist?
         if showbill_response.status_code == 409:
             raise DropItem("Existing ShowBill found: %s" % item.discoverySection.foundUrl)
         
         elif showbill_response.status_code == requests.codes.created:
+            item['showbill'] = item_json
             return item
         
         else:

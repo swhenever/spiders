@@ -123,6 +123,8 @@ class FirstAveSpider(CrawlSpider):
 
         name_result = response.xpath("//h1[@id='page-title']/text()").extract()
         event_section.title = name_result[0]
+        if event_section.title == 'PRIVATE PARTY':
+            return []  # Should not make a show, because this event is not open to the public
 
         # Age restriction
         age_string = response.css('div.field-name-field-event-age div.field-item::text').extract()
@@ -175,7 +177,11 @@ class FirstAveSpider(CrawlSpider):
         event_section.doorsDatetime = date
 
         # PERFORMANCES SECTION
+        # performers in the Performer section
         performer_strings = response.xpath('//div[contains(concat(" ", normalize-space(@class), " "), " field-name-field-event-performer ")]//article[contains(concat(" ", normalize-space(@class), " "), " node-performer ")]//h2//a/text()').extract() #field-name-field-event-performer
+        # sometimes has performers listed as "special guests", grab those too
+        special_guest_strings = response.css('.field-name-field-event-special-guests .node-performer h2 a::text').extract()
+        performer_strings = performer_strings + special_guest_strings
         performances = []
         for i, performer in enumerate(performer_strings):
             performance_section = PerformanceSection()
