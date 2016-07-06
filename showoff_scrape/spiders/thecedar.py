@@ -52,6 +52,9 @@ class CedarSpider(CrawlSpider):
         name_result = response.css('div.event-info h1.headliners::text').extract()
         event_section.title = self.kill_unicode_and_strip(name_result[0])
 
+        # age restriction
+        event_section.minimumAgeRestriction = 0  # Cedar shows are all all-ages
+
         # ticket prices
         # string is like: $18 Advance / $20 Day of show
         ticket_price_string = response.css('div.ticket-price h3.price-range::text').extract()
@@ -62,6 +65,11 @@ class CedarSpider(CrawlSpider):
             event_section.ticketPriceDoors = float(prices[1].strip('$'))
         elif len(prices) == 1:
             event_section.ticketPriceDoors = float(prices[0].strip('$'))
+
+        # sold out
+        sold_out_selectors = response.css('div.ticket-price h3.sold-out::text').extract()
+        if len(sold_out_selectors) > 0:
+            event_section.soldOut = True
 
         # ticket purchase URL
         ticket_purchase_url_string = response.css('h3.ticket-link a.tickets::attr(href)').extract()
