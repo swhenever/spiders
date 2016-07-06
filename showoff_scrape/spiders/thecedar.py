@@ -3,14 +3,15 @@ from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors import LinkExtractor
 import arrow
 import re
+import dateutil
 from showoff_scrape.items import *
 from scrapy.shell import inspect_response
 
-class TripleRockSpider(CrawlSpider):
+class CedarSpider(CrawlSpider):
 
-    name = 'triplerock'
-    allowed_domains = ['triplerocksocialclub.com']
-    start_urls = ['http://www.triplerocksocialclub.com/shows']
+    name = 'thecedar'
+    allowed_domains = ['thecedar.org']
+    start_urls = ['http://www.thecedar.org/listing/']
     rules = [Rule(LinkExtractor(allow=['/event/\d+-.+']), 'parse_show')] #/event/829471-denim-matriarch-minneapolis/
 
     # @todo handle daylight savings?
@@ -18,16 +19,16 @@ class TripleRockSpider(CrawlSpider):
 
     # Make venue identifier for this venue-based spider
     def make_venue_identifier(self):
-        return VenueIdentifier('Triple Rock Social Club', 'Minneapolis', 'Minnesota')
+        return VenueIdentifier('The Cedar Cultural Center', 'Minneapolis', 'Minnesota')
 
     def make_venue_section(self):
         venue_section = VenueSection(self.make_venue_identifier())
-        venue_section.venueUrl = 'http://www.triplerocksocialclub.com'
+        venue_section.venueUrl = 'http://www.thecedar.org'
         return venue_section
 
     def make_discovery_section(self):
         discovery_section = DiscoverySection()
-        discovery_section.discoveredBy = 'triplerock.py'
+        discovery_section.discoveredBy = 'thecedar.py'
         return discovery_section
 
 
@@ -52,15 +53,15 @@ class TripleRockSpider(CrawlSpider):
         event_section.title = self.kill_unicode_and_strip(name_result[0])
 
         # ticket prices
-        # ticket price string is like: $12.00-15.00
+        # string is like: $18 Advance / $20 Day of show
         ticket_price_string = response.css('div.ticket-price h3.price-range::text').extract()
         ticket_price_string = self.kill_unicode_and_strip(ticket_price_string[0])
-        ticket_prices = ticket_price_string.split('-')
-        if len(ticket_prices) > 1:
-            event_section.ticketPriceAdvance = float(self.kill_unicode_and_strip(ticket_prices[0]).strip('$'))
-            event_section.ticketPriceDoors = float(self.kill_unicode_and_strip(ticket_prices[1]).strip('$'))
-        elif len(ticket_prices) == 1:
-            event_section.ticketPriceDoors = float(self.kill_unicode_and_strip(ticket_prices[0]).strip('$'))
+        prices = re.findall(ur'[$]\d+(?:\.\d{2})?', ticket_price_string)
+        if len(prices) == 2:
+            event_section.ticketPriceAdvance = float(prices[0].strip('$'))
+            event_section.ticketPriceDoors = float(prices[1].strip('$'))
+        elif len(prices) == 1:
+            event_section.ticketPriceDoors = float(prices[0].strip('$'))
 
         # ticket purchase URL
         ticket_purchase_url_string = response.css('h3.ticket-link a.tickets::attr(href)').extract()
@@ -69,10 +70,19 @@ class TripleRockSpider(CrawlSpider):
             event_section.ticketPurchaseUrl = ticket_purchase_url_string
 
         # parse doors date/time
-        datetime_string = response.css('div.event-info h2.times span.start span::attr(title)').extract()
-        datetime_string = self.kill_unicode_and_strip(datetime_string[0])
-        date = arrow.get(datetime_string, 'YYYY-MM-DDTHH:mm:ssZZ') # 2015-05-02T20:00:00-05:00
-        event_section.doorsDatetime = date
+        doors_string = response.css('div.event-info h2.times span.doors::text').extract()  # Doors: 7:00 pm
+        doors_string = self.kill_unicode_and_strip(doors_string[0])
+        doors_string = re.search(ur'\d+:\d+ [ap]m', doors_string).group(0)  # 7:00 pm
+        start_string = response.css('div.event-info h2.times span.start::text').extract()  # Show: 8:00 pm
+        start_string = self.kill_unicode_and_strip(start_string[0])
+        start_string = re.search(ur'\d+:\d+ [ap]m', start_string).group(0)  # 8:00 pm
+        date_string = response.css('div.event-info h2.dates::text').extract()  # Fri, July 15, 2016
+        date_string = self.kill_unicode_and_strip(date_string[0])
+
+        doors_date = arrow.get(date_string + doors_string, [r"\w+, MMMM +D, YYYYh:mm a"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+        event_section.doorsDatetime = doors_date
+        start_date = arrow.get(date_string + start_string, [r"\w+, MMMM +D, YYYYh:mm a"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+        event_section.startDatetime = start_date
 
         # PERFORMERS SECTION
         # find performers
