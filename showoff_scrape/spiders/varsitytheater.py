@@ -52,10 +52,10 @@ class VarsitySpider(CrawlSpider):
         # if we are forcing a split, or find text that indicates to  us a comma-separated list
         if force_split or re.search(r'with special guests|featuring', performers_string, re.IGNORECASE):
             # get rid of the unnecessary text
-            performers_string = re.sub(r'^.+\Wwith special guests\W|^.+?\W?featuring\W', r'', performers_string, 0, re.IGNORECASE)
+            performers_string = re.sub(r'^(.+)?(\W)?with special guests\W|^.+?\W?featuring\W', r'', performers_string, 0, re.IGNORECASE)
             performers = re.split(r', |, AND | AND |AND ', performers_string)
             performers = filter(None, performers)  # eliminate empty strings
-            performers = map(lambda p: self.kill_unicode_and_strip(p), performers) # sanitize/strip each value
+            performers = map(lambda p: self.kill_unicode_and_strip(p), performers)  # sanitize/strip each value
         else:
             performers = [self.kill_unicode_and_strip(performers_string)]
         return performers
@@ -103,8 +103,6 @@ class VarsitySpider(CrawlSpider):
             event_section.ticketPurchaseUrl = ticket_purchase_url_string
 
         # age restriction
-        # TODO START HERE - age restriction is in time_ages_string - "7pm Doors - 8pm Music - 18+ with I.D."
-
         ages = re.findall(ur'(\d+\+|All Ages)', time_ages_string)
         if len(ages) > 0 and ages[0] == 'All Ages':
             event_section.minimumAgeRestriction = 0
@@ -130,12 +128,16 @@ class VarsitySpider(CrawlSpider):
         # this sometimes has an unicode em dash in it. If so, split string by that
         # we're using a stupid hack to accomplish this (zap all unicode into an ascii placeholder)
         headline_string_raw = re.sub(r'[^\x00-\x7f]', r'|+|', headline_string_raw[0])
-        performer_name_strings = headline_string_raw.split('|+|')
+        headline_name_strings = headline_string_raw.split('|+|')
+        performer_name_strings = []
+        for i, performer_string in enumerate(headline_name_strings):
+            performer_name_strings = performer_name_strings + self.process_performers_string(performer_string)
 
         # add any special guests to the list of performer names
-        guest_string_raw = response.css('article.cpt_events p:last::text').extract()
+        guest_string_raw = response.css('article.cpt_events p::text').extract()
         if len(guest_string_raw) > 0:
-            guest_string = self.kill_unicode_and_strip(guest_string_raw[0])
+            # proper string is the text from the LAST <p> found
+            guest_string = self.kill_unicode_and_strip(guest_string_raw[(len(guest_string_raw) - 1)])
             if not re.search(r'TBA', guest_string, re.IGNORECASE):
                 guest_performances = self.process_performers_string(guest_string)
                 performer_name_strings = performer_name_strings + guest_performances
