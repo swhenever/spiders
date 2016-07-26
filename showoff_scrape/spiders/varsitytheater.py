@@ -12,7 +12,7 @@ class VarsitySpider(CrawlSpider):
     name = 'varsitytheater'
     allowed_domains = ['varsitytheater.org']
     start_urls = ['http://varsitytheater.org/shows-calendar-varsity-theater/']
-    rules = [Rule(LinkExtractor(allow=['/events/.+/ ']), 'parse_show')]  # /events/warpaint/
+    rules = [Rule(LinkExtractor(allow=['/events/.+/']), 'parse_show')]  # /events/warpaint/
 
     # @todo handle daylight savings?
     timezone = 'US/Central'
