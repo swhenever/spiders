@@ -3,13 +3,25 @@ Spiders for performing arts events, running in the Scrapy framewok (http://scrap
 
 ## Spider status
 
+### WORKING
+
+* amsterdam: working! (needs refinement, some dates aren't matching)
+* cabooze: working!
+* fineline: working! (needs refinement, some dates aren't matching)
 * firstave: working!
-* hexagonbar: NOT working (needs manually-renewed facebook API key)
-* kittycatklub: working!
-* leesliquorlounge: working (limitation: it lists all performances as separate shows, even if they are consecutive)
-* threethirtyoneclub: working!
+* icehouse: working!
+* millcitynights: working! (needs refinement, some errors on missing page elements)
+* thecedar: working!
 * triplerock: working!
-* turfclub: working!
+* turfclub: working! (but probably obsolete, since firstave covers this)
+* varsitytheater: working!
+
+### NOT working
+
+* threethirtyoneclub: website has changed, see http://331club.com/#calendar
+* hexagonbar: needs manually-renewed facebook API key
+* kittycatklub: website has changed, now a facebook page
+* leesliquorlounge: website has changed, see http://www.leesliquorlounge.com/calendar.html
 
 ## Running spiders
 
