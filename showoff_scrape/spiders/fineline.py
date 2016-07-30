@@ -20,7 +20,7 @@ class FineLineSpider(CrawlSpider):
 
     # Make venue identifier for this venue-based spider
     def make_venue_identifier(self):
-        return VenueIdentifier('Fine Line Music Cafe', 'Minneapolis', 'Minnesota')
+        return VenueIdentifier('Fine Line', 'Minneapolis', 'Minnesota')
 
     def make_venue_section(self):
         venue_section = VenueSection(self.make_venue_identifier())

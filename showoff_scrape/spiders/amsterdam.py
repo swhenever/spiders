@@ -19,7 +19,7 @@ class AmsterdamSpider(CrawlSpider):
 
     # Make venue identifier for this venue-based spider
     def make_venue_identifier(self):
-        return VenueIdentifier('Amsterdam Bar & Hall', 'Saint Paul', 'Minnesota')
+        return VenueIdentifier('Amsterdam Bar and Hall', 'Saint Paul', 'Minnesota')
 
     def make_venue_section(self):
         venue_section = VenueSection(self.make_venue_identifier())

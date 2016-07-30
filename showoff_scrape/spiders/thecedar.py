@@ -19,7 +19,7 @@ class CedarSpider(CrawlSpider):
 
     # Make venue identifier for this venue-based spider
     def make_venue_identifier(self):
-        return VenueIdentifier('The Cedar Cultural Center', 'Minneapolis', 'Minnesota')
+        return VenueIdentifier('The Cedar', 'Minneapolis', 'Minnesota')
 
     def make_venue_section(self):
         venue_section = VenueSection(self.make_venue_identifier())
