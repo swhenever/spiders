@@ -110,13 +110,17 @@ class FineLineSpider(CrawlSpider):
         date_string = self.kill_unicode_and_strip(date_string[0])
 
         show_times_string = response.css('div.single-post-time div.cell::text').extract()  # 7:00 Doors | 7:30 Show
-        show_times_string = self.kill_unicode_and_strip(show_times_string[1])
-        show_times = re.findall(ur'\d+:\d+(?:\w)?(?:[ap]m)?', show_times_string)
+        show_times_string = self.kill_unicode_and_strip("".join(show_times_string))
+        show_times = re.findall(ur'\d+:\d+(?=\W)?(?=[ap]m)?', show_times_string)
         if len(show_times) > 1:
             event_section.doorsDatetime = arrow.get(date_string + show_times[0] + 'pm', [r"MM/DD/YYYYh:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
             event_section.startDatetime = arrow.get(date_string + show_times[1] + 'pm', [r"MM/DD/YYYYh:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
         elif len(show_times) == 1:
             event_section.doorsDatetime = arrow.get(date_string + show_times[0] + 'pm', [r"MM/DD/YYYYh:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+        else:
+            # If we can't find any times, ShowBill would be incomplete.
+            # @todo some way of logging this perhaps
+            return []
 
         # PERFORMERS SECTION
         # find performers
