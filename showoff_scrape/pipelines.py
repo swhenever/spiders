@@ -41,7 +41,7 @@ class submitShowbillPipeline(object):
         
         # does this event already exist?
         if showbill_response.status_code == 409:
-            raise DropItem("Existing ShowBill found: %s" % item.discoverySection.foundUrl)
+            raise DropItem("Existing ShowBill found: %s" % item['showbill'].discoverySection.foundUrl)
         
         elif showbill_response.status_code == requests.codes.created:
             item['showbill'] = item_json
