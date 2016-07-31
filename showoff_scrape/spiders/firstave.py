@@ -35,36 +35,37 @@ class FirstAveSpider(CrawlSpider):
 
 
     def get_venue_info(self, venue_name):
+        # Commented-out venues are handled by other spiders
         if venue_name == 'First Avenue':
             city = 'Minneapolis'
             url = 'http://www.first-avenue.com/'
         elif venue_name == 'Turf Club':
             city = 'Saint Paul'
             url = 'http://www.turfclub.net/'
-        elif venue_name == 'Fine Line':
-            city = 'Minneapolis'
-            url = 'http://finelinemusic.com/'
-        elif venue_name == 'The Cedar':
-            city = 'Minneapolis'
-            url = 'http://www.thecedar.org/'
-        elif venue_name == 'Amsterdam Bar and Hall':
-            city = 'Saint Paul'
-            url = 'http://www.amsterdambarandhall.com/'
-        elif venue_name == 'The Cabooze':
-            city = 'Minneapolis'
-            url = 'http://www.cabooze.com/'
+        # elif venue_name == 'Fine Line':
+        #     city = 'Minneapolis'
+        #     url = 'http://finelinemusic.com/'
+        # elif venue_name == 'The Cedar':
+        #     city = 'Minneapolis'
+        #     url = 'http://www.thecedar.org/'
+        # elif venue_name == 'Amsterdam Bar and Hall':
+        #     city = 'Saint Paul'
+        #     url = 'http://www.amsterdambarandhall.com/'
+        # elif venue_name == 'The Cabooze':
+        #     city = 'Minneapolis'
+        #     url = 'http://www.cabooze.com/'
         elif venue_name == 'Skyway Theatre':
             city = 'Minneapolis'
             url = 'http://skywaytheatre.com/'
-        elif venue_name == 'Varsity Theater':
-            city = 'Minneapolis'
-            url = 'http://varsitytheater.org/'
-        elif venue_name == 'Icehouse':
-            city = 'Minneapolis'
-            url = 'http://www.icehousempls.com/'
-        elif venue_name == 'Triple Rock Social Club':
-            city = 'Minneapolis'
-            url = 'http://www.triplerocksocialclub.com/'
+        # elif venue_name == 'Varsity Theater':
+        #     city = 'Minneapolis'
+        #     url = 'http://varsitytheater.org/'
+        # elif venue_name == 'Icehouse':
+        #     city = 'Minneapolis'
+        #     url = 'http://www.icehousempls.com/'
+        # elif venue_name == 'Triple Rock Social Club':
+        #     city = 'Minneapolis'
+        #     url = 'http://www.triplerocksocialclub.com/'
         elif venue_name == 'Surly Brewing Festival Field':
             city = 'Minneapolis'
             url = 'http://surlybrewing.com/destination-brewery/'
@@ -109,12 +110,13 @@ class FirstAveSpider(CrawlSpider):
         venue_string = response.css('div.field-name-field-event-venue div.field-item a::text').extract()
         venue_string = self.kill_unicode_and_strip(venue_string[0])
         stage_string = response.css('div.field-name-field-event-room div.field-item::text').extract()
+        venue_section = False
         if len(venue_string) > 0:
             venue_section = self.make_venue_section(venue_string)
             if len(stage_string) > 0:
                 stage_string = self.kill_unicode_and_strip(stage_string[0])
                 venue_section.stage = stage_string
-        else:
+        if venue_section is False:
             return []  # Cannot make a Show for this event, because we don't understand its venue
 
         # EVENT SECTION
