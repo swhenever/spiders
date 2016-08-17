@@ -1,4 +1,4 @@
-# showthing-scrape
+# spiders
 Spiders for performing arts events, running in the Scrapy framewok (http://scrapy.org/). Spiders make ShowBills that are assigned to items, and items are fed to a pipelne that POSTs them to the engine's /showbill endpoint.
 
 ## Spider status
