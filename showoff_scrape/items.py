@@ -49,6 +49,7 @@ class VenueSection(ShowBillSection):
         self.venueIdentifier = venueIdentifier
         self.stage = str
         self.venueUrl = str
+        self.wasMoved = False
 
 
 class EventSection(ShowBillSection):
@@ -62,6 +63,8 @@ class EventSection(ShowBillSection):
         self.ticketPriceAdvance = float
         self.ticketPurchaseUrl = str
         self.soldOut = False
+        self.isCancelled = False
+        self.isPostponed = False
         self.eventUrl = str
         self.title = str
         self.description = str

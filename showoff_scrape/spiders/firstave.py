@@ -4,6 +4,7 @@ from scrapy.contrib.linkextractors import LinkExtractor
 import arrow
 import dateutil
 import re
+import showspiderutils
 from re import sub
 from showoff_scrape.items import *
 
@@ -93,28 +94,20 @@ class FirstAveSpider(CrawlSpider):
             venue_section = False
         return venue_section
 
-    def make_discovery_section(self):
-        discovery_section = DiscoverySection()
-        discovery_section.discoveredBy = 'firstave.py'
-        return discovery_section
-
-    def kill_unicode_and_strip(self, text):
-        return re.sub(r'[^\x00-\x7f]', r'', text).strip()
-
     def parse_show(self, response):
         # DISCOVERY SECTION
-        discovery_section = self.make_discovery_section()
+        discovery_section = showspiderutils.make_discovery_section('firstave.py')
         discovery_section.foundUrl = response.url
 
         # VENUE SECTION
         venue_string = response.css('div.field-name-field-event-venue div.field-item a::text').extract()
-        venue_string = self.kill_unicode_and_strip(venue_string[0])
+        venue_string = showspiderutils.kill_unicode_and_strip(venue_string[0])
         stage_string = response.css('div.field-name-field-event-room div.field-item::text').extract()
         venue_section = False
         if len(venue_string) > 0:
             venue_section = self.make_venue_section(venue_string)
             if len(stage_string) > 0:
-                stage_string = self.kill_unicode_and_strip(stage_string[0])
+                stage_string = showspiderutils.kill_unicode_and_strip(stage_string[0])
                 venue_section.stage = stage_string
         if venue_section is False:
             return []  # Cannot make a Show for this event, because we don't understand its venue
@@ -128,10 +121,18 @@ class FirstAveSpider(CrawlSpider):
         if event_section.title == 'PRIVATE PARTY':
             return []  # Should not make a show, because this event is not open to the public
 
+        # Is event cancelled, moved or postponed?
+        if showspiderutils.check_text_for_cancelled(event_section.title):
+            event_section.isCancelled = True
+        if showspiderutils.check_text_for_postponed(event_section.title):
+            event_section.isPostponed = True
+        if showspiderutils.check_text_for_moved(event_section.title):
+            venue_section.wasMoved = True
+
         # Age restriction
         age_string = response.css('div.field-name-field-event-age div.field-item::text').extract()
         if len(age_string) > 0:
-            age_string = self.kill_unicode_and_strip(age_string[0])
+            age_string = showspiderutils.kill_unicode_and_strip(age_string[0])
             if age_string == 'ALL AGES':
                 event_section.minimumAgeRestriction = 0
             elif age_string == '18+':
@@ -142,22 +143,22 @@ class FirstAveSpider(CrawlSpider):
         # Ticket Availability
         soldout_string = response.css('div.field-name-field-event-status div.field-item a.sold_out::text').extract()
         if len(soldout_string) > 0:
-            soldout_string = self.kill_unicode_and_strip(soldout_string[0])
+            soldout_string = showspiderutils.kill_unicode_and_strip(soldout_string[0])
             event_section.soldOut = True
         else:
             purchase_string = response.css('div.field-name-field-event-status div.field-item a.on_sale').xpath('@href').extract()
             if len(purchase_string) > 0:
-                purchase_string = self.kill_unicode_and_strip(purchase_string[0])
+                purchase_string = showspiderutils.kill_unicode_and_strip(purchase_string[0])
                 event_section.ticketPurchaseUrl = purchase_string
 
         # Ticket Price
         doors_price_string = response.css('div.field-name-field-event-door-price span.price::text').extract()
         if len(doors_price_string) > 0:
-            doors_price_string = self.kill_unicode_and_strip(doors_price_string[0])
+            doors_price_string = showspiderutils.kill_unicode_and_strip(doors_price_string[0])
             event_section.ticketPriceDoors = float(sub(r'[^\d.]', '', doors_price_string))
         advance_price_string = response.css('div.field-name-field-event-price span.price::text').extract()
         if len(advance_price_string) > 0:
-            advance_price_string = self.kill_unicode_and_strip(advance_price_string[0])
+            advance_price_string = showspiderutils.kill_unicode_and_strip(advance_price_string[0])
             event_section.ticketPriceAdvance = float(sub(r'[^\d.]', '', advance_price_string))
 
         # Stage

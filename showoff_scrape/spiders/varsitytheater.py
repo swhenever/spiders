@@ -6,6 +6,7 @@ import re
 import dateutil
 from showoff_scrape.items import *
 from scrapy.shell import inspect_response
+import showspiderutils
 
 class VarsitySpider(CrawlSpider):
 
@@ -26,16 +27,6 @@ class VarsitySpider(CrawlSpider):
         venue_section.venueUrl = 'http://varsitytheater.org'
         return venue_section
 
-    def make_discovery_section(self):
-        discovery_section = DiscoverySection()
-        discovery_section.discoveredBy = 'varsitytheater.py'
-        return discovery_section
-
-
-    # kill unicode regex
-    def kill_unicode_and_strip(self, text):
-        return re.sub(r'[^\x00-\x7f]',r'',text).strip()
-
     # Return correct arrow time matching pattern for the given time string
     def make_arrow_time_pattern(self, time):
         if re.search(r':', time):
@@ -55,16 +46,16 @@ class VarsitySpider(CrawlSpider):
             performers_string = re.sub(r'^(.+)?(\W)?with special guests\W|^.+?\W?featuring\W', r'', performers_string, 0, re.IGNORECASE)
             performers = re.split(r', |, AND | AND |AND ', performers_string)
             performers = filter(None, performers)  # eliminate empty strings
-            performers = map(lambda p: self.kill_unicode_and_strip(p), performers)  # sanitize/strip each value
+            performers = map(lambda p: showspiderutils.kill_unicode_and_strip(p), performers)  # sanitize/strip each value
         else:
-            performers = [self.kill_unicode_and_strip(performers_string)]
+            performers = [showspiderutils.kill_unicode_and_strip(performers_string)]
         return performers
 
     def parse_show(self, response):
         #inspect_response(response, self)
 
         # DISCOVERY SECTION
-        discovery_section = self.make_discovery_section()
+        discovery_section = showspiderutils.make_discovery_section('varsitytheater.py')
         discovery_section.foundUrl = response.url
 
         # VENUE SECTION
@@ -74,13 +65,17 @@ class VarsitySpider(CrawlSpider):
         event_section = EventSection()
         event_section.eventUrl = response.url
         name_result = response.css('article.cpt_events h1.entry-title::text').extract()
-        event_section.title = self.kill_unicode_and_strip(name_result[0])
+        event_section.title = showspiderutils.kill_unicode_and_strip(name_result[0])
 
         # Most properties are in a set of LIs
         property_text_strings = response.css('article.cpt_events ul.album-meta li::text').extract()
-        date_string = self.kill_unicode_and_strip(property_text_strings[0])  # 22 - Jul - 2016
-        ticket_price_string = self.kill_unicode_and_strip(property_text_strings[1])  # $20 Advance / $25 Day Of Show
-        time_ages_string = self.kill_unicode_and_strip(property_text_strings[2])  # 7pm Doors - 8pm Music - 16+ with I.D.
+        date_string = showspiderutils.kill_unicode_and_strip(property_text_strings[0])  # 22 - Jul - 2016
+        ticket_price_string = showspiderutils.kill_unicode_and_strip(property_text_strings[1])  # $20 Advance / $25 Day Of Show
+        time_ages_string = showspiderutils.kill_unicode_and_strip(property_text_strings[2])  # 7pm Doors - 8pm Music - 16+ with I.D.
+
+        # is the show moved?
+        if showspiderutils.check_text_for_moved(event_section.title):
+            venue_section.wasMoved = True
 
         # ticket prices
         # string is like: $18 Advance / $20 Day of show
@@ -99,7 +94,7 @@ class VarsitySpider(CrawlSpider):
         # ticket purchase URL
         ticket_purchase_url_string = response.css('article.cpt_events ul.album-meta a.buy::attr(href)').extract()
         if len(ticket_purchase_url_string) > 0:
-            ticket_purchase_url_string = self.kill_unicode_and_strip(ticket_purchase_url_string[0])
+            ticket_purchase_url_string = showspiderutils.kill_unicode_and_strip(ticket_purchase_url_string[0])
             event_section.ticketPurchaseUrl = ticket_purchase_url_string
 
         # age restriction
@@ -137,7 +132,7 @@ class VarsitySpider(CrawlSpider):
         guest_string_raw = response.css('article.cpt_events p::text').extract()
         if len(guest_string_raw) > 0:
             # proper string is the text from the LAST <p> found
-            guest_string = self.kill_unicode_and_strip(guest_string_raw[(len(guest_string_raw) - 1)])
+            guest_string = showspiderutils.kill_unicode_and_strip(guest_string_raw[(len(guest_string_raw) - 1)])
             if not re.search(r'TBA', guest_string, re.IGNORECASE):
                 guest_performances = self.process_performers_string(guest_string)
                 performer_name_strings = performer_name_strings + guest_performances

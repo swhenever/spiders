@@ -6,6 +6,7 @@ import re
 import dateutil
 from showoff_scrape.items import *
 from scrapy.shell import inspect_response
+import showspiderutils
 
 
 class FineLineSpider(CrawlSpider):
@@ -27,11 +28,6 @@ class FineLineSpider(CrawlSpider):
         venue_section.venueUrl = 'http://finelinemusic.com'
         return venue_section
 
-    def make_discovery_section(self):
-        discovery_section = DiscoverySection()
-        discovery_section.discoveredBy = 'fineline.py'
-        return discovery_section
-
     def parse_title_artists(self, title):
         artist_strings = []
 
@@ -40,23 +36,19 @@ class FineLineSpider(CrawlSpider):
 
         # handle "Cal Ecker w/ Amanda Watkins"
         if re.search(r'w/', title, re.IGNORECASE):
-            artist_strings += map(lambda p: self.kill_unicode_and_strip(p), re.split(r'w/', title))
+            artist_strings += map(lambda p: showspiderutils.kill_unicode_and_strip(p), re.split(r'w/', title))
         elif re.search(r'\W&\W|\Wand\W', title, re.IGNORECASE):
-            artist_strings += map(lambda p: self.kill_unicode_and_strip(p), re.split(r'\W&\W|\Wand\W|,\W', title))
+            artist_strings += map(lambda p: showspiderutils.kill_unicode_and_strip(p), re.split(r'\W&\W|\Wand\W|,\W', title))
         else:
             artist_strings.append(title)
 
         return artist_strings
 
-    # kill unicode regex
-    def kill_unicode_and_strip(self, text):
-        return re.sub(r'[^\x00-\x7f]',r'',text).strip()
-
     def parse_show(self, response):
         #inspect_response(response, self)
 
         # DISCOVERY SECTION
-        discovery_section = self.make_discovery_section()
+        discovery_section = showspiderutils.make_discovery_section('fineline.py')
         discovery_section.foundUrl = response.url
 
         # VENUE SECTION
@@ -66,15 +58,30 @@ class FineLineSpider(CrawlSpider):
         event_section = EventSection()
         event_section.eventUrl = response.url
         name_result = response.css('header.title div.title-container h1::text').extract()
-        event_section.title = self.kill_unicode_and_strip(name_result[0])
+        event_section.title = showspiderutils.kill_unicode_and_strip(name_result[0])
 
         post_paragraphs = response.css('div.single-post-content p::text').extract()
+
+        # is event canceled?
+        # there is a "status" element, the second of two div.cell in div.single-post-status
+        # usually it is "Tickets Available" but also "CANCELED" or "MOVED TO 7TH ST ENTRY"
+        status_cells = response.css('div.single-post-status div.cell::text').extract()
+        if len(status_cells) == 2:
+            status_text = showspiderutils.kill_unicode_and_strip(status_cells[1])
+        else:
+            status_text = ''
+        if showspiderutils.check_text_for_cancelled(event_section.title) \
+                or showspiderutils.check_text_for_cancelled(status_text):
+            event_section.isCancelled = True
+        if showspiderutils.check_text_for_moved(event_section.title) \
+                or showspiderutils.check_text_for_moved(status_text):
+            venue_section.wasMoved = True
 
         # age restriction
         # sometimes age restriction is in the last paragraph of the general "post" content
         if len(post_paragraphs) > 0:
             possible_age_restriction = post_paragraphs[(len(post_paragraphs) - 1)]
-            ages = re.findall(ur'(\d+\+|all ages)', self.kill_unicode_and_strip(possible_age_restriction))
+            ages = re.findall(ur'(\d+\+|all ages)', showspiderutils.kill_unicode_and_strip(possible_age_restriction))
             if len(ages) > 0 and ages[0] == 'all ages':
                 event_section.minimumAgeRestriction = 0
             elif len(ages) > 0:
@@ -84,7 +91,7 @@ class FineLineSpider(CrawlSpider):
         # string is like: $15 Advance | $20 DOS
         # sometimes there is a third line for reserved balcony seating, but we're ignoring that
         ticket_price_string = response.css('div.single-post-price div.cell::text').extract()
-        ticket_price_string = self.kill_unicode_and_strip(ticket_price_string[1])
+        ticket_price_string = showspiderutils.kill_unicode_and_strip(ticket_price_string[1])
         prices = re.findall(ur'[$]\d+(?:\.\d{2})?', ticket_price_string)
         if len(prices) == 2:
             event_section.ticketPriceAdvance = float(prices[0].strip('$'))
@@ -101,16 +108,16 @@ class FineLineSpider(CrawlSpider):
         # ticket purchase URL
         ticket_purchase_url_string = response.css('div.post-buy.button a::attr(href)').extract()
         if len(ticket_purchase_url_string) > 0:
-            ticket_purchase_url_string = self.kill_unicode_and_strip(ticket_purchase_url_string[0])
+            ticket_purchase_url_string = showspiderutils.kill_unicode_and_strip(ticket_purchase_url_string[0])
             event_section.ticketPurchaseUrl = ticket_purchase_url_string
 
         # parse doors date/time
         # we assume "pm" for all fine line events
         date_string = response.css('li.single-post-date h3::text').extract()  # 07/27/2016
-        date_string = self.kill_unicode_and_strip(date_string[0])
+        date_string = showspiderutils.kill_unicode_and_strip(date_string[0])
 
         show_times_string = response.css('div.single-post-time div.cell::text').extract()  # 7:00 Doors | 7:30 Show
-        show_times_string = self.kill_unicode_and_strip("".join(show_times_string))
+        show_times_string = showspiderutils.kill_unicode_and_strip("".join(show_times_string))
         show_times = re.findall(ur'\d+:\d+(?=\W)?(?=[ap]m)?', show_times_string)
         if len(show_times) > 1:
             event_section.doorsDatetime = arrow.get(date_string + show_times[0] + 'pm', [r"MM/DD/YYYYh:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
@@ -133,14 +140,14 @@ class FineLineSpider(CrawlSpider):
         if len(post_paragraphs) > 0:
             for i, paragraph in enumerate(post_paragraphs):
                 if i >= (len(post_paragraphs) - 4) and re.search(r'w/', paragraph, re.IGNORECASE):
-                    possible_performer = self.kill_unicode_and_strip(re.sub(r'w/', r'', paragraph, 0, re.IGNORECASE))
+                    possible_performer = showspiderutils.kill_unicode_and_strip(re.sub(r'w/', r'', paragraph, 0, re.IGNORECASE))
                     if possible_performer not in performer_strings:
                         performer_strings.append(possible_performer)
 
         performances = []
         for i, performer in enumerate(performer_strings):
             performance_section = PerformanceSection()
-            performance_section.name = self.kill_unicode_and_strip(performer)
+            performance_section.name = showspiderutils.kill_unicode_and_strip(performer)
             performance_section.order = i
             performances.append(performance_section)
 

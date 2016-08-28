@@ -5,6 +5,7 @@ import arrow
 import re
 from showoff_scrape.items import *
 from scrapy.shell import inspect_response
+import showspiderutils
 
 class TripleRockSpider(CrawlSpider):
 
@@ -25,12 +26,6 @@ class TripleRockSpider(CrawlSpider):
         venue_section.venueUrl = 'http://www.triplerocksocialclub.com'
         return venue_section
 
-    def make_discovery_section(self):
-        discovery_section = DiscoverySection()
-        discovery_section.discoveredBy = 'triplerock.py'
-        return discovery_section
-
-
     # kill unicode regex
     def kill_unicode_and_strip(self, text):
         return re.sub(r'[^\x00-\x7f]',r'',text).strip()
@@ -39,7 +34,7 @@ class TripleRockSpider(CrawlSpider):
         #inspect_response(response, self)
 
         # DISCOVERY SECTION
-        discovery_section = self.make_discovery_section()
+        discovery_section = showspiderutils.make_discovery_section('triplerock.py')
         discovery_section.foundUrl = response.url
 
         # VENUE SECTION
@@ -50,6 +45,13 @@ class TripleRockSpider(CrawlSpider):
         event_section.eventUrl = response.url
         name_result = response.css('div.event-info h1.headliners::text').extract()
         event_section.title = self.kill_unicode_and_strip(name_result[0])
+
+        # is show postponed?
+        # "postponed" has its own element
+        postponed_label = response.css('div.ticket-price h3.postponed::text').extract()
+        if len(postponed_label) > 0 \
+                or showspiderutils.check_text_for_postponed(event_section.title):
+            event_section.isPostponed = True
 
         # ticket prices
         # ticket price string is like: $12.00-15.00
