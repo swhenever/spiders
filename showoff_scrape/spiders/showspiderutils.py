@@ -28,3 +28,12 @@ def check_text_for_postponed(subject_text):
 
 def check_text_for_moved(subject_text):
     return re.search(r'moved\s+to|was\s+moved|has\s+been\s+moved', subject_text, re.IGNORECASE)
+
+
+def check_text_for_age_restriction(subject_text):
+    if re.search(r'all ages|aa', subject_text, re.IGNORECASE):
+        return 0
+    elif re.search(r'\d\d\+', subject_text, re.IGNORECASE):
+        return int(re.search(r'\d\d\+', subject_text, re.IGNORECASE).group().strip('+'))
+    elif re.search(r'\d\d and over|\d\d & over', subject_text, re.IGNORECASE):
+        return int(re.search(r'(\d\d)(?: and over)|(\d\d)(?: & over)', subject_text, re.IGNORECASE).groups()[0])

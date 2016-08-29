@@ -53,6 +53,12 @@ class TripleRockSpider(CrawlSpider):
                 or showspiderutils.check_text_for_postponed(event_section.title):
             event_section.isPostponed = True
 
+        # Age restriction
+        age_restriction_text = response.css('.age-restriction::text').extract()
+        if len(age_restriction_text) > 0:
+            age_restriction_text = showspiderutils.kill_unicode_and_strip(age_restriction_text[0])
+            event_section.minimumAgeRestriction = showspiderutils.check_text_for_age_restriction(age_restriction_text)
+
         # ticket prices
         # ticket price string is like: $12.00-15.00
         ticket_price_string = response.css('div.ticket-price h3.price-range::text').extract()

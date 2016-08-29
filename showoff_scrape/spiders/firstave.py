@@ -70,6 +70,9 @@ class FirstAveSpider(CrawlSpider):
         elif venue_name == 'Surly Brewing Festival Field':
             city = 'Minneapolis'
             url = 'http://surlybrewing.com/destination-brewery/'
+        elif venue_name == "Historic Halls Island":
+            city = 'Minneapolis'
+            url = 'http://first-avenue.com/venue/historic-hall%E2%80%99s-island'
         else:
             return False
 
