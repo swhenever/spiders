@@ -6,6 +6,7 @@ import re
 import dateutil
 from showoff_scrape.items import *
 from scrapy.shell import inspect_response
+import showspiderutils
 
 
 class CaboozeSpider(CrawlSpider):
@@ -27,21 +28,11 @@ class CaboozeSpider(CrawlSpider):
         venue_section.venueUrl = 'http://www.cabooze.com'
         return venue_section
 
-    def make_discovery_section(self):
-        discovery_section = DiscoverySection()
-        discovery_section.discoveredBy = 'cabooze.py'
-        return discovery_section
-
-
-    # kill unicode regex
-    def kill_unicode_and_strip(self, text):
-        return re.sub(r'[^\x00-\x7f]', r'', text).strip()
-
     def parse_show(self, response):
         #inspect_response(response, self)
 
         # DISCOVERY SECTION
-        discovery_section = self.make_discovery_section()
+        discovery_section = showspiderutils.make_discovery_section('cabooze.py')
         discovery_section.foundUrl = response.url
 
         # VENUE SECTION
@@ -51,21 +42,18 @@ class CaboozeSpider(CrawlSpider):
         event_section = EventSection()
         event_section.eventUrl = response.url
         name_result = response.css('div.event-info h1.headliners::text').extract()
-        event_section.title = self.kill_unicode_and_strip(name_result[0])
+        event_section.title = showspiderutils.kill_unicode_and_strip(name_result[0])
 
         # age restriction
         age_restriction_string = response.css('div.event-info h2.age-restriction::text').extract()
         if len(age_restriction_string) > 0:
-            ages = re.findall(ur'(\d+\+|all ages)', self.kill_unicode_and_strip(age_restriction_string[0]))
-            if len(ages) > 0 and ages[0] == 'all ages':
-                event_section.minimumAgeRestriction = 0
-            elif len(ages) > 0:
-                event_section.minimumAgeRestriction = ages[0].strip(' +')
+            age_restriction_string = showspiderutils.kill_unicode_and_strip(age_restriction_string[0])
+            event_section.minimumAgeRestriction = showspiderutils.check_text_for_age_restriction(age_restriction_string)
 
         # ticket prices
         # string is like: $7 - $10 or $20.00 - $50.00 or $10 Before 11:00PM / $15 After
         ticket_price_string = response.css('div.ticket-price h3.price-range::text').extract()
-        ticket_price_string = self.kill_unicode_and_strip(ticket_price_string[0])
+        ticket_price_string = showspiderutils.kill_unicode_and_strip(ticket_price_string[0])
         prices = re.findall(ur'[$]\d+(?:\.\d{2})?', ticket_price_string)
         if len(prices) == 2:
             event_section.ticketPriceAdvance = float(prices[0].strip('$'))
@@ -82,22 +70,22 @@ class CaboozeSpider(CrawlSpider):
         # ticket purchase URL
         ticket_purchase_url_string = response.css('h3.ticket-link a.tickets::attr(href)').extract()
         if len(ticket_purchase_url_string) > 0:
-            ticket_purchase_url_string = self.kill_unicode_and_strip(ticket_purchase_url_string[0])
+            ticket_purchase_url_string = showspiderutils.kill_unicode_and_strip(ticket_purchase_url_string[0])
             event_section.ticketPurchaseUrl = ticket_purchase_url_string
 
         # parse doors date/time
         date_string = response.css('div.event-info h2.dates::text').extract()  # Fri, July 15, 2016
-        date_string = self.kill_unicode_and_strip(date_string[0])
+        date_string = showspiderutils.kill_unicode_and_strip(date_string[0])
 
         doors_string = response.css('div.event-info h2.times span.doors::text').extract()  # Doors: 7:00 pm
         if len(doors_string) > 0:
-            doors_string = self.kill_unicode_and_strip(doors_string[0])
+            doors_string = showspiderutils.kill_unicode_and_strip(doors_string[0])
             doors_string = re.search(ur'\d+:\d+ [ap]m', doors_string).group(0)  # 7:00 pm
             doors_date = arrow.get(date_string + doors_string, [r"\w+, MMMM +D, YYYYh:mm a"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
             event_section.doorsDatetime = doors_date
 
         start_string = response.css('div.event-info h2.times span.start::text').extract()  # Show: 8:00 pm
-        start_string = self.kill_unicode_and_strip(start_string[0])
+        start_string = showspiderutils.kill_unicode_and_strip(start_string[0])
         start_string = re.search(ur'\d+:\d+ [ap]m', start_string).group(0)  # 8:00 pm
         start_date = arrow.get(date_string + start_string, [r"\w+, MMMM +D, YYYYh:mm a"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
         event_section.startDatetime = start_date
@@ -108,13 +96,13 @@ class CaboozeSpider(CrawlSpider):
         # supporting artists in supports container
         supporting_performer_strings = response.css('div.event-info h2.supports::text').extract()
         if len(supporting_performer_strings) > 0:
-            supporting_performer_strings = self.kill_unicode_and_strip(supporting_performer_strings[0])
+            supporting_performer_strings = showspiderutils.kill_unicode_and_strip(supporting_performer_strings[0])
             performer_strings = performer_strings + supporting_performer_strings.split(', ')
 
         performances = []
         for i, performer in enumerate(performer_strings):
             performance_section = PerformanceSection()
-            performance_section.name = self.kill_unicode_and_strip(performer)
+            performance_section.name = showspiderutils.kill_unicode_and_strip(performer)
             performance_section.order = i
             performances.append(performance_section)
 
