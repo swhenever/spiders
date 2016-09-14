@@ -60,10 +60,12 @@ def check_text_for_prices(subject_text):
         prices['doors'] = 0
     else:
         prices_found = re.findall(ur'[$]\d+(?:\.\d{2})?', subject_text)
-        if len(prices_found) == 2:
+        if len(prices_found) > 1:
             # assume that door price is listed first
             prices['advance'] = float(prices_found[0].strip('$'))
             prices['doors'] = float(prices_found[1].strip('$'))
+
+            # @todo support additional prices (VIP, table seating, etc.)
         elif len(prices_found) == 1:
             prices['doors'] = float(prices_found[0].strip('$'))
     return prices

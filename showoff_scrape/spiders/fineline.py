@@ -92,12 +92,11 @@ class FineLineSpider(CrawlSpider):
         # sometimes there is a third line for reserved balcony seating, but we're ignoring that
         ticket_price_string = response.css('div.single-post-price div.cell::text').extract()
         ticket_price_string = showspiderutils.kill_unicode_and_strip(ticket_price_string[1])
-        prices = re.findall(ur'[$]\d+(?:\.\d{2})?', ticket_price_string)
-        if len(prices) == 2:
-            event_section.ticketPriceAdvance = float(prices[0].strip('$'))
-            event_section.ticketPriceDoors = float(prices[1].strip('$'))
-        elif len(prices) == 1:
-            event_section.ticketPriceDoors = float(prices[0].strip('$'))
+        prices = showspiderutils.check_text_for_prices(ticket_price_string)
+        if prices['doors'] is not None:
+            event_section.ticketPriceDoors = prices['doors']
+        if prices['advance'] is not None:
+            event_section.ticketPriceAdvance = prices['advance']
 
         # sold out
         # didn't find a sold out indicator on current calendar, so not sure yet what it will look like!
