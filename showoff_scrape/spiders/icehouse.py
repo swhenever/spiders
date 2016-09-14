@@ -64,7 +64,7 @@ class IcehouseSpider(CrawlSpider):
         if start_time_string is None:
             # actually looks like "10:30pm - 11:55pm" before JS kills the 2nd time value. 2nd time is not meaningful
             start_time_string = response.css('p.event-time time.event-time-12hr::text').extract()
-            start_time_string = showspiderutils.kill_unicode_and_strip(start_time_string)
+            start_time_string = showspiderutils.kill_unicode_and_strip(start_time_string[0])
             times = re.findall(ur'\d+:\d\d[p|a]m', start_time_string, re.IGNORECASE)
             start_time_string = showspiderutils.time_normalize(times[0])
 
