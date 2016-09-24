@@ -16,7 +16,7 @@ class IcehouseSpider(CrawlSpider):
     start_urls = ['http://www.icehousempls.com/events/']
 
     # ex: http://www.icehousempls.com/events/2016/9/17/sophia-eris-album-release-saint-laron-gym-kang-ness-nite
-    rules = [Rule(LinkExtractor(allow=['/event/\d+/\d+/\d+/.+']), 'parse_show')]
+    rules = [Rule(LinkExtractor(allow=['/events/\d+/\d+/\d+/.+']), 'parse_show')]
 
     # @todo handle daylight savings?
     timezone = 'US/Central'
