@@ -5,6 +5,7 @@ import arrow
 import re
 import dateutil
 from showoff_scrape.items import *
+import showspiderutils
 from scrapy.shell import inspect_response
 
 class AmsterdamSpider(CrawlSpider):
@@ -27,13 +28,8 @@ class AmsterdamSpider(CrawlSpider):
         return venue_section
 
     def make_discovery_section(self):
-        discovery_section = DiscoverySection()
-        discovery_section.discoveredBy = 'amsterdam.py'
+        discovery_section = showspiderutils.make_discovery_section('amsterdam.py')
         return discovery_section
-
-    # kill unicode regex
-    def kill_unicode_and_strip(self, text):
-        return re.sub(r'[^\x00-\x7f]',r'',text).strip()
 
     def parse_title_artists(self, title):
         artist_strings = []
@@ -42,7 +38,7 @@ class AmsterdamSpider(CrawlSpider):
         title = re.sub(r'special guests', r'', title, 0, re.IGNORECASE)
 
         if re.search(r',\W', title, re.IGNORECASE):  # doesn't seem like amsterdam uses and or & in title band lists
-            artist_strings += map(lambda p: self.kill_unicode_and_strip(p), re.split(r'\W&\W|\Wand\W|,\W', title))
+            artist_strings += map(lambda p: showspiderutils.kill_unicode_and_strip(p), re.split(r'\W&\W|\Wand\W|,\W', title))
         else:
             artist_strings.append(title)
 
@@ -62,11 +58,11 @@ class AmsterdamSpider(CrawlSpider):
         event_section = EventSection()
         event_section.eventUrl = response.url
         name_result = response.css('header.entry-header h2::text').extract()
-        event_section.title = self.kill_unicode_and_strip(name_result[0])
+        event_section.title = showspiderutils.kill_unicode_and_strip(name_result[0])
 
-        # Get metadata from first paragraph, separated by "X" images
+        # Get metadata from first paragraph, separated by "X" images (replace those with spaces so strings are separate)
         metadata_string = response.css('div.entry-content p::text').extract_first()
-        metadata_string = self.kill_unicode_and_strip(metadata_string)
+        metadata_string = showspiderutils.kill_unicode_and_strip(metadata_string, ' ')
 
         # age restriction
         if re.search(r'all ages|aa', metadata_string, re.IGNORECASE):
@@ -76,14 +72,11 @@ class AmsterdamSpider(CrawlSpider):
 
         # ticket prices
         # string is like: $18 Advance / $20 Day of show
-        prices = re.findall(ur'[$]\d+(?:\.\d{2})?', metadata_string)
-        if len(prices) == 2:
-            event_section.ticketPriceAdvance = float(prices[0].strip('$'))
-            event_section.ticketPriceDoors = float(prices[1].strip('$'))
-        elif len(prices) == 1:
-            event_section.ticketPriceDoors = float(prices[0].strip('$'))
-        elif re.search(r'free', metadata_string, re.IGNORECASE):
-            event_section.ticketPriceDoors = 0
+        prices = showspiderutils.check_text_for_prices(metadata_string)
+        if prices['doors'] is not None:
+            event_section.ticketPriceDoors = prices['doors']
+        if prices['advance'] is not None:
+            event_section.ticketPriceAdvance = prices['advance']
 
         # sold out
         # don't see a sold out show on Amsterdam calendar, so not sure what one looks like! TODO
@@ -94,12 +87,12 @@ class AmsterdamSpider(CrawlSpider):
         # ticket purchase URL
         ticket_purchase_url_string = response.css('h3.ticket-link a.tickets::attr(href)').extract()
         if len(ticket_purchase_url_string) > 0:
-            ticket_purchase_url_string = self.kill_unicode_and_strip(ticket_purchase_url_string[0])
+            ticket_purchase_url_string = showspiderutils.kill_unicode_and_strip(ticket_purchase_url_string[0])
             event_section.ticketPurchaseUrl = ticket_purchase_url_string
 
         # parse doors date/time
         date_string = response.css('header.entry-header h4::text').extract_first()  # Wednesday, August 3
-        date_string = self.kill_unicode_and_strip(date_string)
+        date_string = showspiderutils.kill_unicode_and_strip(date_string)
 
         if re.search(ur'\d+(\W)?[ap]m', metadata_string, re.IGNORECASE):
             doors_string = re.search(ur'\d+(\W)?[ap]m', metadata_string, re.IGNORECASE).group() # 7PM or 7 PM
@@ -125,7 +118,7 @@ class AmsterdamSpider(CrawlSpider):
         performances = []
         for i, performer in enumerate(performerStrings):
             performance_section = PerformanceSection()
-            performance_section.name = self.kill_unicode_and_strip(performer)
+            performance_section.name = showspiderutils.kill_unicode_and_strip(performer)
             performance_section.order = i
             performances.append(performance_section)
 
