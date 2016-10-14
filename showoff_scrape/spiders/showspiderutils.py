@@ -8,8 +8,10 @@ from re import sub
 from showoff_scrape.items import *
 
 
-def kill_unicode_and_strip(text):
-    return re.sub(r'[^\x00-\x7f]', r'', text).strip()
+def kill_unicode_and_strip(text, replacement=None):
+    if replacement is None:
+        replacement = ''
+    return re.sub(r'[^\x00-\x7f]', r'' + replacement + '', text).strip()
 
 
 # Normalize time string to 4:30pm format
