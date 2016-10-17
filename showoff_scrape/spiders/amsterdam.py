@@ -93,20 +93,20 @@ class AmsterdamSpider(CrawlSpider):
         # parse doors date/time
         date_string = response.css('header.entry-header h4::text').extract_first()  # Wednesday, August 3
         date_string = showspiderutils.kill_unicode_and_strip(date_string)
-
-        if re.search(ur'\d+(\W)?[ap]m', metadata_string, re.IGNORECASE):
-            doors_string = re.search(ur'\d+(\W)?[ap]m', metadata_string, re.IGNORECASE).group() # 7PM or 7 PM
-            doors_string = re.sub(r'\W', r'', doors_string)
-            time_select = 'ha'
-        elif re.search(ur'\d+:\d\d(\W)?[ap]m', metadata_string, re.IGNORECASE):
-            doors_string = re.search(ur'\d+:\d\d(\W)?[ap]m', metadata_string, re.IGNORECASE).group()  # 7:30PM or 7:30 PM
-            doors_string = re.sub(r'\W', r'', doors_string)
-            time_select = 'h:mma'
-
         year_string = arrow.utcnow().format('YYYY')
-
-        doors_date = arrow.get(date_string + doors_string + year_string, [r"\w+, MMMM D" + time_select + "YYYY"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
-        event_section.doorsDatetime = doors_date
+        times = showspiderutils.check_text_for_times(metadata_string)
+        if len(times) > 1:
+            event_section.doorsDatetime = arrow.get(date_string + " " + times[0] + year_string, [r"\w+, MMMM D h:mmaYYYY"],
+                                                    locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+            event_section.startDatetime = arrow.get(date_string + " " + times[1] + year_string, [r"\w+, MMMM D h:mmaYYYY"],
+                                                    locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+        elif len(times) == 1:
+            event_section.startDatetime = arrow.get(date_string + " " + times[0] + year_string, [r"\w+, MMMM D h:mmaYYYY"],
+                                                    locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+        else:
+            # If we can't find any times, ShowBill would be incomplete.
+            # @todo some way of logging this perhaps
+            return []
 
         # PERFORMERS SECTION
         # find performers from title
