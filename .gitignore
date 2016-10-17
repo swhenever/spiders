@@ -1,6 +1,7 @@
 .idea
 *.pyc
 build/
+dist/
+showoff_scrape.egg-info/
 project.egg-info/
-setup.py
 twistd.pid
