@@ -78,14 +78,22 @@ class FineLineSpider(CrawlSpider):
             venue_section.wasMoved = True
 
         # age restriction
-        # sometimes age restriction is in the last paragraph of the general "post" content
+        # sometimes age restriction is in either the first 3 paragraphs or the last p of the general "post" content
         if len(post_paragraphs) > 0:
-            possible_age_restriction = post_paragraphs[(len(post_paragraphs) - 1)]
-            ages = re.findall(ur'(\d+\+|all ages)', showspiderutils.kill_unicode_and_strip(possible_age_restriction))
-            if len(ages) > 0 and ages[0] == 'all ages':
-                event_section.minimumAgeRestriction = 0
-            elif len(ages) > 0:
-                event_section.minimumAgeRestriction = ages[0].strip(' +')
+            possible_age_restriction_targets = [
+                post_paragraphs[0],
+                post_paragraphs[1],
+                post_paragraphs[2],
+                post_paragraphs[(len(post_paragraphs) - 1)]
+            ]
+            for age_index, possible_age_restriction in enumerate(possible_age_restriction_targets):
+                ages = re.findall(ur'(\d+\+|all ages)', showspiderutils.kill_unicode_and_strip(possible_age_restriction))
+                if len(ages) > 0 and ages[0] == 'all ages':
+                    event_section.minimumAgeRestriction = 0
+                    break
+                elif len(ages) > 0:
+                    event_section.minimumAgeRestriction = ages[0].strip(' +')
+                    break
 
         # ticket prices
         # string is like: $15 Advance | $20 DOS
@@ -117,12 +125,12 @@ class FineLineSpider(CrawlSpider):
 
         show_times_string = response.css('div.single-post-time div.cell::text').extract()  # 7:00 Doors | 7:30 Show
         show_times_string = showspiderutils.kill_unicode_and_strip("".join(show_times_string))
-        show_times = re.findall(ur'\d+:\d+(?=\W)?(?=[ap]m)?', show_times_string)
+        show_times = showspiderutils.check_text_for_times(show_times_string)
         if len(show_times) > 1:
-            event_section.doorsDatetime = arrow.get(date_string + show_times[0] + 'pm', [r"MM/DD/YYYYh:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
-            event_section.startDatetime = arrow.get(date_string + show_times[1] + 'pm', [r"MM/DD/YYYYh:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+            event_section.doorsDatetime = arrow.get(date_string + show_times[0], [r"MM/DD/YYYYh:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+            event_section.startDatetime = arrow.get(date_string + show_times[1], [r"MM/DD/YYYYh:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
         elif len(show_times) == 1:
-            event_section.doorsDatetime = arrow.get(date_string + show_times[0] + 'pm', [r"MM/DD/YYYYh:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+            event_section.doorsDatetime = arrow.get(date_string + show_times[0], [r"MM/DD/YYYYh:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
         else:
             # If we can't find any times, ShowBill would be incomplete.
             # @todo some way of logging this perhaps

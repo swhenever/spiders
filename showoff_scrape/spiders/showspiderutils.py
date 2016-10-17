@@ -71,3 +71,17 @@ def check_text_for_prices(subject_text):
         elif len(prices_found) == 1:
             prices['doors'] = float(prices_found[0].strip('$'))
     return prices
+
+
+# Possible time formats covered: 8, 8:30, 8pm, 8:30pm, 8 PM. Prefers times with am/pm string adjacent.
+def check_text_for_times(subject_text):
+    # Plan A: try times with am/pm text adjacent
+    times = re.findall(ur'\d?\d\s*?[ap]m|\d?\d:\d{2}\s*?[ap]m', subject_text, re.IGNORECASE)
+    if len(times) == 0:
+        # Plan B: try finding times without am/pm
+        times = re.findall(ur'\d?\d:\d{2}|\d?\d', subject_text, re.IGNORECASE)
+
+    # Return in standardized format
+    times = [time_normalize(time) for time in times]
+
+    return times
