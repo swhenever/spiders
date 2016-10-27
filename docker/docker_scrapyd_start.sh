@@ -5,5 +5,8 @@ deploy_after_delay() {
   scrapyd-deploy
 }
 
+# make sure any existing twistd pid file is deleted
+rm /var/spiders/twistd.pid
+
 deploy_after_delay &
 scrapyd
