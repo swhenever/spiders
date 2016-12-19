@@ -4,6 +4,7 @@ from scrapy.linkextractors import LinkExtractor
 import arrow
 import dateutil
 import re
+from dateutil.parser import parse
 from re import sub
 from showoff_scrape.items import *
 
@@ -74,10 +75,10 @@ def check_text_for_prices(subject_text):
 
 
 # Possible time formats covered: 8, 8:30, 8pm, 8:30pm, 8 PM. Prefers times with am/pm string adjacent.
-def check_text_for_times(subject_text):
+def check_text_for_times(subject_text, require_suffix=False):
     # Plan A: try times with am/pm text adjacent
     times = re.findall(ur'\d?\d\s*?[ap]m|\d?\d:\d{2}\s*?[ap]m', subject_text, re.IGNORECASE)
-    if len(times) == 0:
+    if len(times) == 0 and not require_suffix:
         # Plan B: try finding times without am/pm
         times = re.findall(ur'\d?\d:\d{2}|\d?\d', subject_text, re.IGNORECASE)
 
@@ -85,3 +86,11 @@ def check_text_for_times(subject_text):
     times = [time_normalize(time) for time in times]
 
     return times
+
+
+def check_text_is_date(subject_text):
+    try:
+        datetime_value = parse(subject_text)
+        return datetime_value
+    except ValueError:
+        return False
