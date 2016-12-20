@@ -47,7 +47,7 @@ def check_text_for_moved(subject_text):
 
 
 def check_text_for_age_restriction(subject_text):
-    if re.search(r'all ages|aa', subject_text, re.IGNORECASE):
+    if re.search(r'all ages|\baa\b|^aa$', subject_text, re.IGNORECASE):
         return 0
     elif re.search(r'\d\d\+', subject_text, re.IGNORECASE):
         return int(re.search(r'\d\d\+', subject_text, re.IGNORECASE).group().strip('+'))

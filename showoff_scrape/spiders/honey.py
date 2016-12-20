@@ -77,11 +77,10 @@ class HoneySpider(CrawlSpider):
 
         # age restriction
         body_paragraphs = response.css('.tribe-events-single-event-description p::text').extract()
-        age_restriction = None
         for para_index, paragraph in enumerate(body_paragraphs):
             age_restriction = showspiderutils.check_text_for_age_restriction(paragraph)
-        if age_restriction is not None:
-            event_section.minimumAgeRestriction = age_restriction
+            if age_restriction is not None:
+                event_section.minimumAgeRestriction = age_restriction
 
         # performances
         # TODO: honey performers are really scattered in body text. Not sure how to extract them. Maybe check for URLs?
