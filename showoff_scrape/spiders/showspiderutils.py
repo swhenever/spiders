@@ -34,6 +34,28 @@ def make_discovery_section(script_name):
     return discovery_section
 
 
+def make_regex_for_matching_dates_in_urls(timezone):
+    now = arrow.now(timezone)
+    now_year = now.format('YYYY')
+    year_regex = '(?:' + now_year[:2] + '[' + now_year[2] + '][' + now_year[3] + '-9]|' + now_year[:2] + '[' + str(int(now_year[2]) + 1) + '-9][0-9])'
+    now_month = now.format('MM')
+    if now_month[0] == '0':
+        month_regex = '(?:0[' + now_month[1] + '-9]|1[0-2])'
+    else:
+        month_regex = '1[' + now_month[1] + '-2]'
+
+    # less restrictive matching for dates that happen next year or after
+    nextyear_year_regex = '(?:' + now_year[:2] + '[' + now_year[2] + '][' + str(int(now_year[3]) + 1) + '-9]|' + now_year[:2] + '[' + str(int(now_year[2]) + 1) + '-9][0-9])'
+    nextyear_month_regex = '[0-9][0-2]'
+
+    return {
+        'month': month_regex,
+        'year': year_regex,
+        'nextyear_year': nextyear_year_regex,
+        'nextyear_month': nextyear_month_regex
+    }
+
+
 def check_text_for_cancelled(subject_text):
     return re.search(r'cancelled|canceled', subject_text, re.IGNORECASE)
 

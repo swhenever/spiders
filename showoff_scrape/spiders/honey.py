@@ -16,18 +16,12 @@ class HoneySpider(CrawlSpider):
     timezone = 'US/Central'
 
     # Avoid following links for past events
-    now = arrow.now(timezone)
-    now_year = now.format('YYYY')
-    year_regex = '(?:' + now_year[:2] + '[' + now_year[2] + '][' + now_year[3] + '-9]|' + now_year[:2] + '[' + str(int(now_year[2]) + 1) + '-9][0-9])'
-    now_month = now.format('MM')
-    if now_month[0] == '0':
-        month_regex = '(?:0[' + now_month[1] + '-9]|1[0-2])'
-    else:
-        month_regex = '1[' + now_month[1] + '-2]'
+    url_date_regex = showspiderutils.make_regex_for_matching_dates_in_urls(timezone)
 
     rules = [
         Rule(LinkExtractor(allow=['/event/.+']), 'parse_show'),
-        Rule(LinkExtractor(allow=['/events/category/live-music/' + year_regex + '-' + month_regex + '/']))
+        Rule(LinkExtractor(allow=['/events/category/live-music/' + url_date_regex['year'] + '-' + url_date_regex['month'] + '/'])),
+        Rule(LinkExtractor(allow=['/events/category/live-music/' + url_date_regex['nextyear_year'] + '-' + url_date_regex['nextyear_month'] + '/']))
     ]
 
     # Make venue identifier for this venue-based spider
