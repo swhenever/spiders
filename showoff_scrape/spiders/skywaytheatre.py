@@ -22,8 +22,8 @@ class SkywayTheatreSpider(CrawlSpider):
 
     rules = [
         Rule(LinkExtractor(allow=['/event/.+']), 'parse_show'),
-        Rule(LinkExtractor(allow=['/calendar/month/' + url_date_regex['year'] + '-' + url_date_regex['month']])),
-        Rule(LinkExtractor(allow=['/calendar/month/' + url_date_regex['nextyear_year'] + '-' + url_date_regex['nextyear_month']]))
+        Rule(LinkExtractor(allow=['/calendar/' + url_date_regex['year'] + '-' + url_date_regex['month']])),
+        Rule(LinkExtractor(allow=['/calendar/' + url_date_regex['nextyear_year'] + '-' + url_date_regex['nextyear_month']]))
     ]
 
     # Make venue identifier for this venue-based spider
@@ -75,34 +75,35 @@ class SkywayTheatreSpider(CrawlSpider):
         event_section.title = showspiderutils.kill_unicode_and_strip(title_string)
 
         # stage
+        stage = False
         stage_string = response.css('.single-e-venue::text').extract_first()
-        stage_string = showspiderutils.kill_unicode_and_strip(stage_string)
-        if len(stage_string) > 0 and stage_string.lower() != 'skyway theatre':
-            stage = stage_string
-        else:
-            stage = False
+        if stage_string is not None:
+            stage_string = showspiderutils.kill_unicode_and_strip(stage_string)
+            if len(stage_string) > 0 and stage_string.lower() != 'skyway theatre':
+                stage = stage_string            
 
         # price
         prices = []
         final_prices = None
-        price_string = response.css('.single-ticket-row h5::text').extract_first();
-        possible_prices = showspiderutils.check_text_for_prices(price_string)
-        if possible_prices['doors'] is not None and possible_prices['advance'] is not None:
-            # wow, both prices in one paragraph
-            final_prices = possible_prices
-        else:
-            # just 'doors' will be entered
-            prices.append(possible_prices['doors'])
-        prices = sorted(list(set(prices)))  # remove duplicates and sort ascending by price
-        if final_prices is not None:
-            event_section.ticketPriceAdvance = final_prices['advance']
-            event_section.ticketPriceDoors = final_prices['doors']
-        elif len(prices) == 1:
-            event_section.ticketPriceAdvance = prices[0]
-        elif len(prices) > 1:
-            event_section.ticketPriceAdvance = prices[0]
-            event_section.ticketPriceDoors = prices[1]
-            # todo: handle VIP packages etc.
+        price_string = response.css('.single-ticket-row h5::text').extract_first()
+        if price_string is not None:
+            possible_prices = showspiderutils.check_text_for_prices(price_string)
+            if possible_prices['doors'] is not None and possible_prices['advance'] is not None:
+                # wow, both prices in one paragraph
+                final_prices = possible_prices
+            else:
+                # just 'doors' will be entered
+                prices.append(possible_prices['doors'])
+            prices = sorted(list(set(prices)))  # remove duplicates and sort ascending by price
+            if final_prices is not None:
+                event_section.ticketPriceAdvance = final_prices['advance']
+                event_section.ticketPriceDoors = final_prices['doors']
+            elif len(prices) == 1:
+                event_section.ticketPriceAdvance = prices[0]
+            elif len(prices) > 1:
+                event_section.ticketPriceAdvance = prices[0]
+                event_section.ticketPriceDoors = prices[1]
+                # todo: handle VIP packages etc.
 
         # ticket purchase URL
         event_section.ticketPurchaseUrl = response.css('.single-ticket-row a::attr(href)').extract_first()
