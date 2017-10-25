@@ -16,7 +16,8 @@ SPIDER_MODULES = ['showoff_scrape.spiders']
 NEWSPIDER_MODULE = 'showoff_scrape.spiders'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-#USER_AGENT = 'showoff_scrape (+http://www.yourdomain.com)'
+# or chrome: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/61.0.3163.100 Chrome/61.0.3163.100 Safari/537.36
+USER_AGENT = 'swhenever (+https://swhenever.com)'
 
 ITEM_PIPELINES = {
     'showoff_scrape.pipelines.logPipeline': 100,
