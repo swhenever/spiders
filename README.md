@@ -8,16 +8,17 @@ Spiders for performing arts events, running in the Scrapy framewok (http://scrap
 * amsterdam: working! (needs refinement, some dates aren't matching)
 * cabooze: working!
 * fineline: working! (needs refinement, some dates aren't matching)
-* firstave: working!
+* firstave: working! (incl Turf Club and Palace Theatre)
+* honey: working!
 * icehouse: working!
-* millcitynights: working! (needs refinement, some errors on missing page elements)
 * thecedar: working!
-* triplerock: working!
+* triplerock: working! (but this venue is closing)
 * turfclub: working! (but probably obsolete, since firstave covers this)
-* varsitytheater: working!
+* skywaytheatre: working!
 
 ### NOT working
 
+* varsitytheater: unknown problems<>
 * threethirtyoneclub: website has changed, see http://331club.com/#calendar
 * hexagonbar: needs manually-renewed facebook API key
 * kittycatklub: website has changed, now a facebook page
