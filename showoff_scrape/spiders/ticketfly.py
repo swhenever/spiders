@@ -12,7 +12,7 @@ class TicketFlySpider(CrawlSpider):
     allowed_domains = ['ticketfly.com']
 
     rules = [
-        Rule(LinkExtractor(allow=['/event/.+']), 'parse_show'),
+        Rule(LinkExtractor(allow=['ticketfly.com/event/.+']), 'parse_show'),
     ]
 
     def make_ticketfly_event_section(self, response):
