@@ -2,7 +2,7 @@ FROM vimagick/scrapyd
 MAINTAINER Jesse Mortenson <jessemortenson@gmail.com>
 
 # install other packages we use on tst
-RUN pip install requests arrow service_identity jsonpickle python-dotenv
+RUN pip install requests arrow service_identity jsonpickle python-dotenv beautifulsoup4
 
 RUN mkdir /var/spiders
 WORKDIR /var/spiders

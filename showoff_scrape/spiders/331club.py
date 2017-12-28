@@ -2,6 +2,8 @@ import scrapy
 from scrapy.selector import Selector
 import arrow
 import dateutil
+from bs4 import BeautifulSoup
+import showspiderutils
 import re
 from showoff_scrape.items import *
 from scrapy.shell import inspect_response
@@ -9,8 +11,8 @@ from scrapy.shell import inspect_response
 class ThreeThirtyOneClubSpider(scrapy.Spider):
 
     name = 'threethirtyoneclub'
-    allowed_domains = ['331.mn']
-    start_urls = ['http://www.331.mn/events.php']
+    allowed_domains = ['331club.com']
+    start_urls = ['http://331club.com/']
     #rules = [Rule(LinkExtractor(allow=['/event/\d+/\d+/.+']), 'parse_show')]
 
     # @todo handle daylight savings?
@@ -22,7 +24,7 @@ class ThreeThirtyOneClubSpider(scrapy.Spider):
 
     def make_venue_section(self):
         venue_section = VenueSection(self.make_venue_identifier())
-        venue_section.venueUrl = 'http://www.331.mn/'
+        venue_section.venueUrl = 'http://331club.com/'
         return venue_section
 
     def make_discovery_section(self):
@@ -30,78 +32,75 @@ class ThreeThirtyOneClubSpider(scrapy.Spider):
         discovery_section.discoveredBy = '331club.py'
         return discovery_section
 
+    def parse_html_for_link(self, html):
+        sel = Selector(text=html)
+        text = sel.css('a::text').extract_first()
+        href = sel.css('a::attr(href)').extract_first()
+
+        if text is None:
+            return None
+        else:
+            return [text, href]
 
     def parse(self, response):
         #inspect_response(response, self)
+        # current year and month
+        current_year = arrow.now().format('YYYY')
+        current_month = arrow.now().format('M')
 
-        # current year
-        year = arrow.now().format('YYYY')
+        # ticket price is always free ("never a cover")
+        price = 0
 
-        # regex for "#:##pm"
-        timeRegex = re.compile("[0-9:]+pm")
+        # Loop through events. Each "event" container may actually have two events
+        for index, event in enumerate(response.css('div.event')):
+            # get the date parts
+            month = event.css('.event-date .month::text').extract_first()
+            day = event.css('.event-date .date::text').extract_first()
 
-        # the events calendar table 
-        # 1st TABLE > 2nd TR > TD > TABLE > 4th TR
-        eventContentRow = response.selector.xpath("(((//body//table)[1]/tr)[2]/td/table/tr)[4]")
+            # if month is earlier than current month, then assume it is NEXT year
+            if int(current_month) > int(arrow.get(month, 'MMM').format('M')):
+                event_year = str(int(current_year) + 1)
+            else:
+                event_year = current_year
 
-        # Day TR > TD > DIV > TABLE > TR > 
-        #   the second TD contains date info
-        #   the fourth TD contains event info (in DIV.event_copy_full)
-        dayRows = eventContentRow.xpath("td/div/table/tr/td")
-        for index, dayRow in enumerate(dayRows):
-            # get arrays of strings from appropriate table cells within the event row
-            dayInfo = dayRow.xpath("(div/table/tr/td)[2]//text()").extract()
-            eventLines = dayRow.xpath("(div/table/tr/td)[4]//text()").extract()
+            # loop through columns: each column is an event
+            for colindex, eventcol in enumerate(event.css('.event-content .columns .column')):
+                soup = BeautifulSoup(eventcol.css('p').extract_first(), "lxml")
+                lines = soup.p.get_text().strip().split('\n')
 
-            # get date stuff for this dayRow
-            day = dayInfo[2] # 3rd row in event area
-            month = dayInfo[1] # 2nd row in event area
+                # find time from last line, then drop last line from lines list
+                times = showspiderutils.check_text_for_times(lines[-1])
+                if len(times) is 0:
+                    continue # we couldn't parse a time, so just skip this event altogether
+                del lines[-1]
 
-            # Parse events in this dayRow
-            # one event typically ends with "XXXXpm"
-            # typically starts with a SPAN at the start of the DIV.event_copy_full OR two BRs
-            currentEventLines = []
-            for eventIndex, eventLine in enumerate(eventLines):
-                # if we have a "[0-9]pm" then we're at a line that ends an event
-                if timeRegex.match(eventLine):
-                    # see if we have collected event lines
-                    if (len(currentEventLines) > 0):
-                        # cool, create a date now that we have time
-                        time = timeRegex.findall(eventLine)[0]
-                        # make sure we have a full time string
-                        if time.find(":") == -1:
-                            time = time.replace("pm", ":00pm")
+                # build performances from remaining lines
+                performances = []
+                for performer_index, performer_text in enumerate(lines):
+                    performance_section = PerformanceSection()
+                    performance_section.name = performer_text
+                    performance_section.order = performer_index
+                    performances.append(performance_section)
 
-                        # DISCOVERY SECTION
-                        discovery_section = self.make_discovery_section()
-                        discovery_section.foundUrl = response.url
+                # BUILD SHOWBILL
 
-                        # VENUE SECTION
-                        venue_section = self.make_venue_section()
-                
-                        # EVENT SECTION
-                        event_section = EventSection()
-                        event_section.startDatetime = arrow.get(month + " " + day + " " + year + " " + time, 'MMMM D YYYY h:mma').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+                # DISCOVERY SECTION
+                discovery_section = self.make_discovery_section()
+                discovery_section.foundUrl = response.url
 
-                        # assume these are performers
-                        performances = []
-                        for i, performer in enumerate(currentEventLines):
-                            performance_section = PerformanceSection()
-                            performance_section.name = performer
-                            performance_section.order = i
-                            performances.append(performance_section)
+                # VENUE SECTION
+                venue_section = self.make_venue_section()
+        
+                # EVENT SECTION
+                event_section = EventSection()
+                event_section.startDatetime = arrow.get(month + " " + day + " " + event_year + " " + times[0], 'MMM D YYYY h:mma').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+                event_section.ticketPriceDoors = price
 
-                        # MAKE HipLiveMusicShowBill
-                        showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances)
+                # MAKE HipLiveMusicShowBill
+                showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances)
 
-                        # Make Scrapy ShowBill container item
-                        scrapy_showbill_item = ScrapyShowBillItem(showbill)
+                # Make Scrapy ShowBill container item
+                scrapy_showbill_item = ScrapyShowBillItem(showbill)
 
-                        #done
-                        yield scrapy_showbill_item
-
-                    # whether we've collected lines or not, time to reset
-                    currentEventLines = []
-                elif len(eventLine.strip()) > 0:
-                    # collect this line, it is nonzero and not a time
-                    currentEventLines.append(eventLine)
+                #done
+                yield scrapy_showbill_item
