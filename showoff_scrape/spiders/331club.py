@@ -51,6 +51,9 @@ class ThreeThirtyOneClubSpider(scrapy.Spider):
         # ticket price is always free ("never a cover")
         price = 0
 
+        # age restriction always 21 (it's a bar)
+        age_restriction = 21
+
         # Loop through events. Each "event" container may actually have two events
         for index, event in enumerate(response.css('div.event')):
             # get the date parts
@@ -95,6 +98,7 @@ class ThreeThirtyOneClubSpider(scrapy.Spider):
                 event_section = EventSection()
                 event_section.startDatetime = arrow.get(month + " " + day + " " + event_year + " " + times[0], 'MMM D YYYY h:mma').replace(tzinfo=dateutil.tz.gettz(self.timezone))
                 event_section.ticketPriceDoors = price
+                event_section.minimumAgeRestriction = age_restriction
 
                 # MAKE HipLiveMusicShowBill
                 showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances)
