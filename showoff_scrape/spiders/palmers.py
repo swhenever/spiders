@@ -48,6 +48,9 @@ class PalmersSpider(CrawlSpider):
         # EVENT SECTION
         event_section = EventSection()
 
+        # url
+        event_section.eventUrl = response.url
+
         # title
         title_string = response.css('.tribe-events-single-event-title::text').extract_first()
         event_section.title = showspiderutils.kill_unicode_and_strip(title_string)
