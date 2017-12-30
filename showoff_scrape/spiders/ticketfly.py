@@ -7,6 +7,9 @@ import showspiderutils
 import dateutil
 from showoff_scrape.items import *
 
+# This class should be extended by another class. It's a base class for a venue that uses Ticketfly listings
+# Create a new class for the venue that is based on TicketFlySpider, and add properties like name and start_urls
+# See uptownvfw.py example
 class TicketFlySpider(CrawlSpider):
 
     allowed_domains = ['ticketfly.com']
