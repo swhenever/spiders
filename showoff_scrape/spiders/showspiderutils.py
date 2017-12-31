@@ -116,3 +116,21 @@ def check_text_is_date(subject_text):
         return datetime_value
     except ValueError:
         return False
+
+def parse_text_for_performers(text):
+    performer_strings = []
+
+    # performer delimiters:
+    # ,
+    # and
+    # &
+    # with
+    # w/
+    # ft
+    # ft.
+    # special guests
+
+    performer_strings += map(lambda p: kill_unicode_and_strip(p), re.split(r',|and|&|with|w/|ft|ft.|special guests', text, flags=re.IGNORECASE))
+    performer_strings = filter(None, performer_strings) # filter out empty strings
+
+    return performer_strings

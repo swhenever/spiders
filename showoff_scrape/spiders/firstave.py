@@ -38,6 +38,9 @@ class FirstAveSpider(CrawlSpider):
         elif venue_name == 'Turf Club':
             city = 'Saint Paul'
             url = 'http://www.turfclub.net/'
+        elif venue_name == 'Palace Theatre':
+            city = 'Saint Paul'
+            url = 'http://palacestpaul.com/'
         # elif venue_name == 'Fine Line':
         #     city = 'Minneapolis'
         #     url = 'http://finelinemusic.com/'
