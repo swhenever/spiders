@@ -131,5 +131,6 @@ def parse_text_for_performers(text):
     # special guests
 
     performer_strings += map(lambda p: kill_unicode_and_strip(p), re.split(r',|and|&|with|w/|ft|ft.|special guests', text, flags=re.IGNORECASE))
+    performer_strings = filter(None, performer_strings) # filter out empty strings
 
     return performer_strings
