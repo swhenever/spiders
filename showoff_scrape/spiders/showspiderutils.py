@@ -34,15 +34,17 @@ def make_discovery_section(script_name):
     return discovery_section
 
 
-def make_regex_for_matching_dates_in_urls(timezone):
+def make_regex_for_matching_dates_in_urls(timezone, year_format='YYYY', month_format='MM'):
     now = arrow.now(timezone)
-    now_year = now.format('YYYY')
+    now_year = now.format(year_format)
     year_regex = '(?:' + now_year[:2] + '[' + now_year[2] + '][' + now_year[3] + '-9]|' + now_year[:2] + '[' + str(int(now_year[2]) + 1) + '-9][0-9])'
-    now_month = now.format('MM')
-    if now_month[0] == '0':
+    now_month = now.format(month_format)
+    if now_month[0] == '0' and month_format == 'MM':
         month_regex = '(?:0[' + now_month[1] + '-9]|1[0-2])'
-    else:
+    elif len(now_month) > 1:
         month_regex = '1[' + now_month[1] + '-2]'
+    elif month_format == 'M':
+        month_regex = '(?:[' + now_month[0] + '-9]|1[0-2])'
 
     # less restrictive matching for dates that happen next year or after
     nextyear_year_regex = '(?:' + now_year[:2] + '[' + now_year[2] + '][' + str(int(now_year[3]) + 1) + '-9]|' + now_year[:2] + '[' + str(int(now_year[2]) + 1) + '-9][0-9])'
@@ -129,8 +131,9 @@ def parse_text_for_performers(text):
     # ft
     # ft.
     # special guests
+    # /
 
-    performer_strings += map(lambda p: kill_unicode_and_strip(p), re.split(r',|and|&|with|w/|ft|ft.|special guests', text, flags=re.IGNORECASE))
+    performer_strings += map(lambda p: kill_unicode_and_strip(p), re.split(r',|and|&|with|w/|ft|ft.|special guests|/', text, flags=re.IGNORECASE))
     performer_strings = filter(None, performer_strings) # filter out empty strings
 
     return performer_strings
