@@ -14,7 +14,7 @@ class DakotaJazzClub(CrawlSpider):
 
     name = 'dakotajazzclub'
     allowed_domains = ['www.dakotacooks.com']
-    start_urls = ['http://www.dakotacooks.com/']
+    start_urls = ['http://www.dakotacooks.com/calendar/']
 
     # @todo handle daylight savings?
     timezone = 'US/Central'
@@ -22,8 +22,11 @@ class DakotaJazzClub(CrawlSpider):
     # Avoid following links for past events
     url_date_regex = showspiderutils.make_regex_for_matching_dates_in_urls(timezone, month_format='M')
 
+    # http://www.dakotacooks.com/calendar/2018-02/
     rules = [
-        Rule(LinkExtractor(allow=['dakotacooks.com/event/[a-zA-Z0-9\-_]+$']), 'parse_show'),
+        Rule(LinkExtractor(allow=['/event/[a-zA-Z0-9\-_]+/$']), 'parse_show'),
+        Rule(LinkExtractor(allow=['/calendar/' + url_date_regex['year'] + '-' + url_date_regex['month'] + '/'])),
+        Rule(LinkExtractor(allow=['/calendar/' + url_date_regex['nextyear_year'] + '-' + url_date_regex['nextyear_month'] + '/']))
     ]
 
     # Make venue identifier for this venue-based spider
@@ -79,18 +82,21 @@ class DakotaJazzClub(CrawlSpider):
         # TODO support multiple ticket tiers
         # shows are either advance ticketed (Ticketed) or at the door (Cover) based on a random link in meta text :(
         price_strings = re.findall(ur'[$][\d-]+', meta_text)
-        prices = price_strings[0].split('-')
-        prices = [price.strip('$ ') for price in prices]
-        low_price = None
-        for price_index, price in enumerate(prices):
-            if low_price is None or int(price) < low_price:
-                low_price = int(price)
-        if low_price is not None:
-            # try to find the link that says either Cover or Ticketed
-            if len(meta_soup.find_all("a", string="Cover")) > 0:
-                event_section.ticketPriceDoors = low_price
-            if len(meta_soup.find_all("a", string="Ticketed")) > 0:
-                event_section.ticketPriceAdvance = low_price
+        if len(price_strings) is 0:
+            price_strings = re.findall(ur'\d\d-[\d-]+', meta_text) # try without $ prefix, instead ##- prefix
+        if len(price_strings) > 0:
+            prices = price_strings[0].split('-')
+            prices = [price.strip('$ ') for price in prices]
+            low_price = None
+            for price_index, price in enumerate(prices):
+                if low_price is None or int(price) < low_price:
+                    low_price = int(price)
+            if low_price is not None:
+                # try to find the link that says either Cover or Ticketed
+                if len(meta_soup.find_all("a", string="Cover")) > 0:
+                    event_section.ticketPriceDoors = low_price
+                if len(meta_soup.find_all("a", string="Ticketed")) > 0:
+                    event_section.ticketPriceAdvance = low_price
 
         # ticket url
         url_string = response.css('#tribe-events-content .module.third a.button.gold::attr(href)').extract_first()
