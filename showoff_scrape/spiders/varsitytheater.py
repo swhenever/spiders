@@ -88,7 +88,7 @@ class VarsitySpider(scrapy.spiders.Spider):
 
         # TICKET URL
         # following convention shown on their website
-        event_section.ticketPurchaseUrl = "https://concerts.livenation.com/event/" + event_data["content"]["eventId"]
+        event_section.ticketPurchaseUrl = "https://concerts.livenation.com/event/" + event_data["content"]["eventId"] + "?f_PPL=true"
 
         # PERFORMANCES
         performances = []
