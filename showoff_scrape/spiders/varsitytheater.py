@@ -1,19 +1,16 @@
 import scrapy
-from scrapy.contrib.spiders import CrawlSpider, Rule
-from scrapy.contrib.linkextractors import LinkExtractor
 import arrow
 import re
+import jsonpickle
 import dateutil
 from showoff_scrape.items import *
 from scrapy.shell import inspect_response
 import showspiderutils
 
-class VarsitySpider(CrawlSpider):
+class VarsitySpider(scrapy.spiders.Spider):
 
     name = 'varsitytheater'
-    allowed_domains = ['varsitytheater.org']
-    start_urls = ['http://varsitytheater.org/shows-calendar-varsity-theater/']
-    rules = [Rule(LinkExtractor(allow=['/events/.+/']), 'parse_show')]  # /events/warpaint/
+    allowed_domains = ['varsitytheater.com']
 
     # @todo handle daylight savings?
     timezone = 'US/Central'
@@ -24,36 +21,29 @@ class VarsitySpider(CrawlSpider):
 
     def make_venue_section(self):
         venue_section = VenueSection(self.make_venue_identifier())
-        venue_section.venueUrl = 'http://varsitytheater.org'
+        venue_section.venueUrl = 'http://varsitytheater.com'
         return venue_section
 
-    # Return correct arrow time matching pattern for the given time string
-    def make_arrow_time_pattern(self, time):
-        if re.search(r':', time):
-            time_pattern = 'h:mma'
-        else:
-            time_pattern = 'ha'
-        return time_pattern
+    def start_requests(self):
+        # Make request to Varsity Theater API
+        startDate = arrow.now().format('M/DD/YYYY')
+        endDate = arrow.now().shift(years=+1).format('M/DD/YYYY')
+        url = "http://www.varsitytheater.com/api/EventCalendar/GetEvents?startDate=" + startDate + "&endDate=" + endDate + "&venueIds=50144&limit=200&offset=1&offerType=STANDARD&genre=&artist="
 
-    # Process a string that may contain performers and return array of performers
-    def process_performers_string(self, performers_string, force_split=False):
-        # get rid of "blahblah presents" or "Presented by blah blah"
-        performers_string = re.sub(r'^.+\Wpresents\W|\Wpresented by.+$', r'', performers_string, 0, re.IGNORECASE)
+        return [scrapy.Request(url, callback=self.parse_api)]
 
-        # if we are forcing a split, or find text that indicates to  us a comma-separated list
-        if force_split or re.search(r'with special guests|featuring', performers_string, re.IGNORECASE):
-            # get rid of the unnecessary text
-            performers_string = re.sub(r'^(.+)?(\W)?with special guests\W|^.+?\W?featuring\W', r'', performers_string, 0, re.IGNORECASE)
-            performers = re.split(r', |, AND | AND |AND ', performers_string)
-            performers = filter(None, performers)  # eliminate empty strings
-            performers = map(lambda p: showspiderutils.kill_unicode_and_strip(p), performers)  # sanitize/strip each value
-        else:
-            performers = [showspiderutils.kill_unicode_and_strip(performers_string)]
-        return performers
+    def parse_api(self, response):
+        # PARSE ENCODED JSON RESPONSE
+        # response is a javascript string of JSON, which we decode a second time to get the actual data
+        events = jsonpickle.decode(jsonpickle.decode(response.body))
+
+        for i, event_data in enumerate(events["result"]):
+            event_id = event_data["eventID"]
+            offer_id = event_data["offerID"]
+            url = "http://www.varsitytheater.com/EventDetail?tmeventid=" + str(event_id) + "&offerid=" + str(offer_id)
+            yield scrapy.Request(url, callback=self.parse_show)
 
     def parse_show(self, response):
-        #inspect_response(response, self)
-
         # DISCOVERY SECTION
         discovery_section = showspiderutils.make_discovery_section('varsitytheater.py')
         discovery_section.foundUrl = response.url
@@ -64,85 +54,50 @@ class VarsitySpider(CrawlSpider):
         # EVENT SECTION
         event_section = EventSection()
         event_section.eventUrl = response.url
-        name_result = response.css('article.cpt_events h1.entry-title::text').extract()
-        event_section.title = showspiderutils.kill_unicode_and_strip(name_result[0])
 
-        # Most properties are in a set of LIs
-        property_text_strings = response.css('article.cpt_events ul.album-meta li::text').extract()
-        date_string = showspiderutils.kill_unicode_and_strip(property_text_strings[0])  # 22 - Jul - 2016
-        ticket_price_string = showspiderutils.kill_unicode_and_strip(property_text_strings[1])  # $20 Advance / $25 Day Of Show
-        time_ages_string = showspiderutils.kill_unicode_and_strip(property_text_strings[2])  # 7pm Doors - 8pm Music - 16+ with I.D.
+        # EXTRACT JS DATA
+        # They use an SPA, which is loading from a javascript variable
+        # couldn't find the actual API location for just a single event's details, so pulling from the page source
+        event_records = re.findall("var RECORD =(.+?);\r\n", response.body.decode("utf-8"), re.S)
+        event_data = jsonpickle.decode(jsonpickle.decode(event_records[0]))
 
-        # is the show moved?
-        if showspiderutils.check_text_for_moved(event_section.title):
-            venue_section.wasMoved = True
+        # TITLE
+        event_section.title = event_data["content"]["title"]
 
-        # ticket prices
-        # string is like: $18 Advance / $20 Day of show
-        prices = re.findall(ur'[$]\d+(?:\.\d{2})?', ticket_price_string)
-        if len(prices) == 2:
-            event_section.ticketPriceAdvance = float(prices[0].strip('$'))
-            event_section.ticketPriceDoors = float(prices[1].strip('$'))
-        elif len(prices) == 1:
-            event_section.ticketPriceDoors = float(prices[0].strip('$'))
+        # TIME AND DATE
+        event_section.startDatetime = arrow.get(event_data["content"]["eventDateStart"]).replace(tzinfo=dateutil.tz.gettz(self.timezone)) # 2018-03-02T20:00:00
 
-        # sold out
-        sold_out_selectors = response.css('article.cpt_events ul.album-meta a.sold::text').extract()
-        if len(sold_out_selectors) > 0:
-            event_section.soldOut = True
+        # AGE RESTRICTION
+        age_restriction = showspiderutils.check_text_for_age_restriction(event_data["content"]["eventInfo"])
+        if age_restriction is not None:
+            event_section.minimumAgeRestriction = age_restriction
 
-        # ticket purchase URL
-        ticket_purchase_url_string = response.css('article.cpt_events ul.album-meta a.buy::attr(href)').extract()
-        if len(ticket_purchase_url_string) > 0:
-            ticket_purchase_url_string = showspiderutils.kill_unicode_and_strip(ticket_purchase_url_string[0])
-            event_section.ticketPurchaseUrl = ticket_purchase_url_string
+        # PRICE
+        low_price = None
+        sold_out = True
+        for i, price_level in enumerate(event_data["content"]["priceLevels"]):
+            if low_price is None or int(float(price_level["price"])) < low_price:
+                low_price = int(float(price_level["price"]))
+            if price_level["soldOut"] is False:
+                sold_out = False
+        if low_price is not None:
+            event_section.ticketPriceAdvance = low_price
 
-        # age restriction
-        ages = re.findall(ur'(\d+\+|All Ages)', time_ages_string)
-        if len(ages) > 0 and ages[0] == 'All Ages':
-            event_section.minimumAgeRestriction = 0
-        elif len(ages) > 0:
-            event_section.minimumAgeRestriction = ages[0].strip(' +')
+        # SOLD OUT
+        event_section.soldOut = sold_out # see above
 
-        # parse doors date/time
-        # 22 - Jul - 20167pm
-        times = re.findall(ur'\d?\d[ap]m|\d?\d:\d{2}[ap]m', time_ages_string)
-        if len(times) > 1:
-            doors_date = arrow.get(date_string + times[0], [r"DD - MMM - YYYY" + self.make_arrow_time_pattern(times[0])], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
-            event_section.doorsDatetime = doors_date
-            start_date = arrow.get(date_string + times[1], [r"DD - MMM - YYYY" + self.make_arrow_time_pattern(times[1])], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
-            event_section.startDatetime = start_date
-        else:
-            start_date = arrow.get(date_string + times[0], [r"DD - MMM - YYYY" + self.make_arrow_time_pattern(times[0])], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
-            event_section.startDatetime = start_date
+        # TICKET URL
+        # following convention shown on their website
+        event_section.ticketPurchaseUrl = "https://concerts.livenation.com/event/" + event_data["content"]["eventId"]
 
-        # PERFORMERS SECTION
-        # find performers
-        headline_string_raw = response.css('article.cpt_events h1.entry-title::text').extract()
-
-        # this sometimes has an unicode em dash in it. If so, split string by that
-        # we're using a stupid hack to accomplish this (zap all unicode into an ascii placeholder)
-        headline_string_raw = re.sub(r'[^\x00-\x7f]', r'|+|', headline_string_raw[0])
-        headline_name_strings = headline_string_raw.split('|+|')
-        performer_name_strings = []
-        for i, performer_string in enumerate(headline_name_strings):
-            performer_name_strings = performer_name_strings + self.process_performers_string(performer_string)
-
-        # add any special guests to the list of performer names
-        guest_string_raw = response.css('article.cpt_events p::text').extract()
-        if len(guest_string_raw) > 0:
-            # proper string is the text from the LAST <p> found
-            guest_string = showspiderutils.kill_unicode_and_strip(guest_string_raw[(len(guest_string_raw) - 1)])
-            if not re.search(r'TBA', guest_string, re.IGNORECASE):
-                guest_performances = self.process_performers_string(guest_string)
-                performer_name_strings = performer_name_strings + guest_performances
-
+        # PERFORMANCES
         performances = []
-        for i, performer in enumerate(performer_name_strings):
-            performance_section = PerformanceSection()
-            performance_section.name = performer
-            performance_section.order = i
-            performances.append(performance_section)
+        for i, performer_data in enumerate(event_data["content"]["artists"]):
+            if performer_data["unMapped"] is False:
+                performance_section = PerformanceSection()
+                performance_section.name = performer_data["name"]
+                performance_section.order = performer_data["rank"]
+                performances.append(performance_section)
 
         # MAKE HipLiveMusicShowBill
         showbill = HipLiveMusicShowBill(discovery_section, venue_section, event_section, performances)
