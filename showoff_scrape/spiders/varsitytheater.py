@@ -65,7 +65,7 @@ class VarsitySpider(scrapy.spiders.Spider):
         event_section.title = event_data["content"]["title"]
 
         # TIME AND DATE
-        event_section.startDatetime = arrow.get(event_data["content"]["eventDateStart"]).replace(tzinfo=dateutil.tz.gettz(self.timezone)) # 2018-03-02T20:00:00
+        event_section.startDatetime = arrow.get(event_data["content"]["eventDateTime"]).replace(tzinfo=dateutil.tz.gettz(self.timezone)) # 2018-03-02T20:00:00
 
         # AGE RESTRICTION
         age_restriction = showspiderutils.check_text_for_age_restriction(event_data["content"]["eventInfo"])
@@ -84,7 +84,9 @@ class VarsitySpider(scrapy.spiders.Spider):
             event_section.ticketPriceAdvance = low_price
 
         # SOLD OUT
-        event_section.soldOut = sold_out # see above
+        # The above method of determinngi sold out does not appear to be reliable
+        # There fore we are ignorign sold_out variable and instead always saying "false"
+        event_section.soldOut = False
 
         # TICKET URL
         # following convention shown on their website
