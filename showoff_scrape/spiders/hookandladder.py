@@ -20,7 +20,7 @@ class HookAndLadderSpider(CrawlSpider):
 
     rules = [
         Rule(LinkExtractor(allow=['/event/.+/']), 'parse_show'),
-        Rule(LinkExtractor(allow=['/events/list/?tribe_event_display=list&tribe_paged=[2-9]']))
+        Rule(LinkExtractor(allow=['.+/events/list/?(.+?)tribe_paged=[2-9]']))
     ]
 
     # Make venue identifier for this venue-based spider
@@ -55,9 +55,12 @@ class HookAndLadderSpider(CrawlSpider):
 
         # time
         # typically duration style: 10:00 pm - 11:55 pm
-        soup = BeautifulSoup(response.css('.tribe-events-start-time').extract_first(), "lxml")
-        time_string = soup.get_text().strip()
-        times = showspiderutils.check_text_for_times(time_string)
+        times = []
+        time_result = response.css('.tribe-events-start-time').extract_first()
+        if time_result is not None:
+            soup = BeautifulSoup(response.css('.tribe-events-start-time').extract_first(), "lxml")
+            time_string = soup.get_text().strip()
+            times = showspiderutils.check_text_for_times(time_string)
         if len(times) is 0:
             return [] # abort: need at least one event time
 
