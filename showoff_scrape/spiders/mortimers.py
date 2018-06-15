@@ -5,6 +5,12 @@ import dateutil
 import re
 import urllib2
 import json
+try:
+    # Python 2.6-2.7 
+    from HTMLParser import HTMLParser
+except ImportError:
+    # Python 3
+    from html.parser import HTMLParser
 from showoff_scrape.items import *
 
 
@@ -27,6 +33,7 @@ class MortimersSpider(scrapy.spiders.Spider):
         return venue_section
 
     def parse(self, response):
+        h = HTMLParser()
         jsonresponse = json.loads(response.body_as_unicode())
         self.logger.info("response events length is %s", len(jsonresponse["events"]))
         for showdata in jsonresponse["events"]:
@@ -55,7 +62,7 @@ class MortimersSpider(scrapy.spiders.Spider):
               event_section.ticketPurchaseUrl = showdata["ticket_uri"]
 
             # title
-            title = showspiderutils.kill_unicode_and_strip(showdata["name"])
+            title = showspiderutils.kill_unicode_and_strip(h.unescape(showdata["name"]))
             title = re.sub(r' at Mort.*', '', title, flags=re.IGNORECASE)
             event_section.title = title
 
