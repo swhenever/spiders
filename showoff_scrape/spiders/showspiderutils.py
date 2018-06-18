@@ -137,3 +137,26 @@ def parse_text_for_performers(text):
     performer_strings = filter(None, performer_strings) # filter out empty strings
 
     return performer_strings
+
+
+# NOTES FOR SCRAPING FACEBOOK PUBLIC PAGES
+        # Facebook Hidden content
+        # pagesoup = BeautifulSoup(response.body, "lxml")
+        
+        # comments = pagesoup.find_all(string=lambda text:isinstance(text,Comment))
+        # THIS STUFF WAS FOR SCRAPING FACEBOOK PUBLIC EVENT PAGES
+        # for c in comments:
+        #   commentsoup = BeautifulSoup(c)
+
+        #   daterange_divs = commentsoup.find_all("div", {"content": True})
+        #   for d in daterange_divs:
+        #     daterange_string = d["content"]
+        #     dates = daterange_string.split(" to ")
+        #     event_section.startDatetime = arrow.get(dates[0].strip(), locale='en').to(self.timezone)
+        #     if len(dates) > 1:
+        #       event_section.endDatetime = arrow.get(dates[1].strip(), locale='en').to(self.timezone)
+
+        #   ticket_links = commentsoup.find_all("li", {"data-testid": "event_ticket_link"})
+        #   for t in ticket_links:
+        #     fb_aliased_url = t.find_all("a")[0]["href"]
+        #     event_section.ticketPurchaseUrl = urllib2.unquote(re.search(ur'^.+php\?u=(.+)&h', fb_aliased_url, re.IGNORECASE).group(1)).decode('utf8')
