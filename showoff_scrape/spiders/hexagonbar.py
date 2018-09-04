@@ -1,12 +1,12 @@
 import scrapy
-from scrapy.spider import BaseSpider
+from scrapy.spiders import Spider
 import arrow
 import dateutil
 import json
 from showoff_scrape.items import *
 from scrapy.shell import inspect_response
 
-class HexagonBarSpider(BaseSpider):
+class HexagonBarSpider(Spider):
 
     name = 'hexagonbar'
     allowed_domains = ['facebook.com']

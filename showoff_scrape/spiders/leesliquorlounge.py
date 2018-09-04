@@ -1,6 +1,5 @@
 import scrapy
 from scrapy.selector import Selector
-from scrapy import log
 import arrow
 import re
 from showoff_scrape.items import *
