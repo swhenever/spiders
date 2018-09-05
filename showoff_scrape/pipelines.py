@@ -36,7 +36,7 @@ class submitShowbillPipeline(object):
         # Make API call to save item
         showbill_endpoint = spider.settings['ENGINE_SHOWBILL_ENDPOINT']
         showbill_response = requests.post(showbill_endpoint, data=submit_data)
-        log.msg('Submmitted Showbill. Response code: ' + str(showbill_response.status_code), level=log.DEBUG)
+        logging.info('Submmitted Showbill. Response code: ' + str(showbill_response.status_code))
         
         # does this event already exist?
         if showbill_response.status_code == 409:
