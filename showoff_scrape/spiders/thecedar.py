@@ -14,7 +14,7 @@ class CedarSpider(CrawlSpider):
     name = 'thecedar'
     allowed_domains = ['thecedar.org']
     start_urls = ['https://www.thecedar.org/listing/']
-    rules = [Rule(LinkExtractor(allow=['/listing/\d+/\d+/\d+/[A-Za-z1-9-_]+$']), 'parse_show')] #/listing/2018/9/9/juana-molina-with-special-guest
+    rules = [Rule(LinkExtractor(allow=['/listing/\d+/\d+/\d+/[A-Za-z0-9-_]+$']), 'parse_show')] #/listing/2018/9/9/juana-molina-with-special-guest
 
     # @todo handle daylight savings?
     timezone = 'US/Central'
