@@ -1,4 +1,4 @@
-from scrapy.contrib.spiders import BaseSpider
+from scrapy.spiders import BaseSpider
 import arrow
 import showspiderutils
 import dateutil
