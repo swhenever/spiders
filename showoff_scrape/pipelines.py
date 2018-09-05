@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 import requests
 from scrapy.exceptions import DropItem
-from scrapy import log
+import logging
 import jsonpickle
-from pprint import pprint
-
+import json
 
 # Define your item pipelines here
 #
@@ -13,8 +12,8 @@ from pprint import pprint
 
 class logPipeline(object):
     def process_item(selfself, item, spider):
-        item_json = jsonpickle.encode(item['showbill'], unpicklable=False)
-        log.msg('Showbill recorded: ' + item_json, level=log.INFO)
+        item_json = json.loads(jsonpickle.encode(item['showbill'], unpicklable=False))
+        logging.info('Showbill recorded: ' + json.dumps(item_json, sort_keys=True, indent=4))
 
         return item
 

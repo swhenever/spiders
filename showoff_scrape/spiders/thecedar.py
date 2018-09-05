@@ -3,16 +3,18 @@ from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 import arrow
 import re
+from bs4 import BeautifulSoup
 import dateutil
 from showoff_scrape.items import *
 from scrapy.shell import inspect_response
+import showspiderutils
 
 class CedarSpider(CrawlSpider):
 
     name = 'thecedar'
     allowed_domains = ['thecedar.org']
-    start_urls = ['http://www.thecedar.org/listing/']
-    rules = [Rule(LinkExtractor(allow=['/event/\d+-.+']), 'parse_show')] #/event/829471-denim-matriarch-minneapolis/
+    start_urls = ['https://www.thecedar.org/listing/']
+    rules = [Rule(LinkExtractor(allow=['/listing/\d+/\d+/\d+/[A-Za-z1-9-_]+$']), 'parse_show')] #/listing/2018/9/9/juana-molina-with-special-guest
 
     # @todo handle daylight savings?
     timezone = 'US/Central'
@@ -32,10 +34,6 @@ class CedarSpider(CrawlSpider):
         return discovery_section
 
 
-    # kill unicode regex
-    def kill_unicode_and_strip(self, text):
-        return re.sub(r'[^\x00-\x7f]',r'',text).strip()
-
     def parse_show(self, response):
         #inspect_response(response, self)
 
@@ -49,22 +47,33 @@ class CedarSpider(CrawlSpider):
         # EVENT SECTION
         event_section = EventSection()
         event_section.eventUrl = response.url
-        name_result = response.css('div.event-info h1.headliners::text').extract()
-        event_section.title = self.kill_unicode_and_strip(name_result[0])
+        title_string = response.css('.eventitem .eventitem-title::text').extract_first()
+        event_section.title = showspiderutils.kill_unicode_and_strip(title_string)
+
+        # description text
+        intro_description_soup = BeautifulSoup(response.css('.eventitem .eventitem-column-content .sqs-block-html').extract_first(), "lxml")
+        intro_description = intro_description_soup.get_text().strip()
+
+        # cancelled?
+        if showspiderutils.check_text_for_cancelled(title_string):
+            event_section.isCancelled = True
 
         # age restriction
-        event_section.minimumAgeRestriction = 0  # Cedar shows are all all-ages
+        age_restriction = showspiderutils.check_text_for_age_restriction(intro_description)
+        if age_restriction is None:
+            event_section.minimumAgeRestriction = 0 # assume All Ages as default
+        else:
+            event_section.minimumAgeRestriction = age_restriction
 
         # ticket prices
-        # string is like: $18 Advance / $20 Day of show
-        ticket_price_string = response.css('div.ticket-price h3.price-range::text').extract()
-        ticket_price_string = self.kill_unicode_and_strip(ticket_price_string[0])
-        prices = re.findall(ur'[$]\d+(?:\.\d{2})?', ticket_price_string)
-        if len(prices) == 2:
-            event_section.ticketPriceAdvance = float(prices[0].strip('$'))
-            event_section.ticketPriceDoors = float(prices[1].strip('$'))
-        elif len(prices) == 1:
-            event_section.ticketPriceDoors = float(prices[0].strip('$'))
+        price_paragraph = intro_description_soup.find('p', text=re.compile("^(Free|\$).+"))
+        if price_paragraph is not None:
+            price_paragraph = price_paragraph.get_text()
+            prices = showspiderutils.check_text_for_prices(showspiderutils.kill_unicode_and_strip(price_paragraph))
+            if prices['doors'] is not None:
+                event_section.ticketPriceDoors = prices['doors']
+            if prices['advance'] is not None:
+                event_section.ticketPriceAdvance = prices['advance']
 
         # sold out
         sold_out_selectors = response.css('div.ticket-price h3.sold-out::text').extract()
@@ -72,34 +81,33 @@ class CedarSpider(CrawlSpider):
             event_section.soldOut = True
 
         # ticket purchase URL
-        ticket_purchase_url_string = response.css('h3.ticket-link a.tickets::attr(href)').extract()
-        if len(ticket_purchase_url_string) > 0:
-            ticket_purchase_url_string = self.kill_unicode_and_strip(ticket_purchase_url_string[0])
-            event_section.ticketPurchaseUrl = ticket_purchase_url_string
+        body_buttons = response.css('.eventitem-column-content .sqs-block-button a')
+        for index, button in enumerate(body_buttons):
+            button_text = button.css('a::text').extract_first()
+            if re.match(r'buy|ticket', button_text, flags=re.IGNORECASE) is not None:
+                ticket_purchase_url_string = button.css('a::attr(href)').extract_first()
+                event_section.ticketPurchaseUrl = ticket_purchase_url_string
 
         # parse doors date/time
-        doors_string = response.css('div.event-info h2.times span.doors::text').extract()  # Doors: 7:00 pm
-        doors_string = self.kill_unicode_and_strip(doors_string[0])
-        doors_string = re.search(ur'\d+:\d+ [ap]m', doors_string).group(0)  # 7:00 pm
-        start_string = response.css('div.event-info h2.times span.start::text').extract()  # Show: 8:00 pm
-        start_string = self.kill_unicode_and_strip(start_string[0])
-        start_string = re.search(ur'\d+:\d+ [ap]m', start_string).group(0)  # 8:00 pm
-        date_string = response.css('div.event-info h2.dates::text').extract()  # Fri, July 15, 2016
-        date_string = self.kill_unicode_and_strip(date_string[0])
+        # date
+        date_string = response.css('.eventitem time.event-date::attr(datetime)').extract_first()  # YYYY-MM-DD
+        # time
+        time_string = response.css('.eventitem time.event-time-12hr-start::text').extract_first()  # H:MM PM
 
-        doors_date = arrow.get(date_string + doors_string, [r"\w+, MMMM +D, YYYYh:mm a"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
-        event_section.doorsDatetime = doors_date
-        start_date = arrow.get(date_string + start_string, [r"\w+, MMMM +D, YYYYh:mm a"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
-        event_section.startDatetime = start_date
+        event_section.startDatetime = arrow.get(time_string + " " + date_string, [r"h:mm a YYYY-MM-DD"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+
 
         # PERFORMERS SECTION
         # find performers
-        performerStrings = response.css('div.artist-boxes div.artist-headline span.artist-name::text').extract()
+        performers = response.css('.eventitem-column-content .sqs-block-content h2')
         performances = []
-        for i, performer in enumerate(performerStrings):
+        for i, performer in enumerate(performers):
             performance_section = PerformanceSection()
-            performance_section.name = self.kill_unicode_and_strip(performer)
+            performance_section.name = showspiderutils.kill_unicode_and_strip(performer.css('::text').extract_first())
             performance_section.order = i
+            performer_url = performer.css('a::attr(href)').extract_first()
+            if performer_url is not None and len(performer_url) > 0:
+                performance_section.urls = [performer_url]
             performances.append(performance_section)
 
         # MAKE HipLiveMusicShowBill
