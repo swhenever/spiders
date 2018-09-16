@@ -1,9 +1,7 @@
-from scrapy.spiders import BaseSpider
 import arrow
 import showspiderutils
 import dateutil
 import re
-import urllib2
 import json
 try:
     # Python 2.6-2.7 
@@ -54,7 +52,7 @@ class MortimersSpider(scrapy.spiders.Spider):
             # date/time
             # 2018-06-15 22:00:00
             event_section.startDatetime = arrow.get(showdata["start_time_raw"], [r"YYYY-MM-DD HH:mm"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
-            if showdata["end_time_raw"]:
+            if showdata["end_time_raw"] and showdata["end_time_raw"] != "0000-00-00 00:00:00":
               event_section.endDatetime = arrow.get(showdata["end_time_raw"], [r"YYYY-MM-DD HH:mm"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
 
             # ticket purchase URL
