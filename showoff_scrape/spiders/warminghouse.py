@@ -13,9 +13,14 @@ class WarmingHouse(CrawlSpider):
 
     name = 'warminghouse'
     allowed_domains = ['thewarminghouse.net']
-    start_urls = ['https://www.thewarminghouse.net/']
+    start_urls = ['https://www.thewarminghouse.net/calendar/']
     # /event/1755507-celebration-series-music-minneapolis/
     rules = [Rule(LinkExtractor(allow=['/event/[0-9]+-.+/$']), 'parse_show')]
+
+    custom_settings = {
+        'CONCURRENT_REQUESTS': 5,
+        'DOWNLOAD_DELAY': 1
+    }
 
     # @todo handle daylight savings?
     timezone = 'US/Central'
