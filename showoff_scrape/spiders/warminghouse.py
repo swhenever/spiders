@@ -95,7 +95,7 @@ class WarmingHouse(CrawlSpider):
             doors_time_parts = doors_string.split(' ')[1].split(':')
             doors_ampm = doors_string.split(' ')[2]
             if doors_ampm == 'pm':
-                doors_time_parts[0] = doors_time_parts[0] + 12
+                doors_time_parts[0] = int(doors_time_parts[0]) + 12
             doors = event_section.startDatetime.clone()
             event_section.doorsDatetime = doors.replace(hour=int(doors_time_parts[0]), minute=int(doors_time_parts[1]))
 
