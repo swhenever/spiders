@@ -41,9 +41,9 @@ class FirstAveSpider(CrawlSpider):
         elif venue_name == 'Palace Theatre':
             city = 'Saint Paul'
             url = 'http://palacestpaul.com/'
-        # elif venue_name == 'Fine Line':
-        #     city = 'Minneapolis'
-        #     url = 'http://finelinemusic.com/'
+        elif venue_name == 'Fine Line':
+            city = 'Minneapolis'
+            url = 'http://finelinemusic.com/'
         # elif venue_name == 'The Cedar':
         #     city = 'Minneapolis'
         #     url = 'http://www.thecedar.org/'
@@ -177,7 +177,7 @@ class FirstAveSpider(CrawlSpider):
         time_string_parts = time_string.split('at');
         time_string = time_string_parts[1]
 
-        date = arrow.get(date_string.strip() + " " + time_string.strip(), [r"\w+, MMMM D, YYYY h:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+        date = arrow.get(date_string.strip() + " " + time_string.strip(), [r"dddd, MMMM D, YYYY h:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
         event_section.doorsDatetime = date
 
         # PERFORMANCES SECTION
