@@ -51,9 +51,9 @@ class MortimersSpider(scrapy.spiders.Spider):
 
             # date/time
             # 2018-06-15 22:00:00
-            event_section.startDatetime = arrow.get(showdata["start_time_raw"], [r"YYYY-MM-DD HH:mm"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+            event_section.startDatetime = arrow.get(showdata["start_time_raw"], [r"YYYY-MM-DD HH:mm"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
             if showdata["end_time_raw"] and showdata["end_time_raw"] != "0000-00-00 00:00:00":
-              event_section.endDatetime = arrow.get(showdata["end_time_raw"], [r"YYYY-MM-DD HH:mm"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+              event_section.endDatetime = arrow.get(showdata["end_time_raw"], [r"YYYY-MM-DD HH:mm"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
 
             # ticket purchase URL
             if showdata["ticket_uri"]:

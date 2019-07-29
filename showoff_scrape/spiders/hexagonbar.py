@@ -81,7 +81,7 @@ class HexagonBarSpider(Spider):
                             # create a string that is trimmed, drops the last two chars ("th", "rd" etc) and adds year/default time
                             dateString = lowerLine.strip()[:-2] + " " + createdDate.format("YYYY") + " " + defaultTime
                             try:
-                                event_section.startDatetime = arrow.get(dateString, [r"\w+ MMMM D YYYY h:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+                                event_section.startDatetime = arrow.get(dateString, [r"\w+ MMMM D YYYY h:mma"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
                             except arrow.parser.ParserError:
                                 # we couldn't parse the date :( maybe a spelling error (frbruary lol)
                                 performances = []

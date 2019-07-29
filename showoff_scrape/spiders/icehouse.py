@@ -70,9 +70,9 @@ class IcehouseSpider(CrawlSpider):
 
         date_string = response.css('p.event-time time.event-meta-heading::text').extract()
         date_string = showspiderutils.kill_unicode_and_strip(date_string[0])
-        event_section.startDatetime = arrow.get(start_time_string.strip() + " " + date_string.strip(), [r"h:mma \w+, MMMM +D, YYYY"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))  # 11:00pm Friday, July  8, 2016
+        event_section.startDatetime = arrow.get(start_time_string.strip() + " " + date_string.strip(), [r"h:mma \w+, MMMM +D, YYYY"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))  # 11:00pm Friday, July  8, 2016
         if doors_time_string is not None:
-            event_section.doorsDatetime = arrow.get(doors_time_string.strip() + " " + date_string.strip(), [r"h:mma \w+, MMMM +D, YYYY"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))  # 11:00pm Friday, July  8, 2016
+            event_section.doorsDatetime = arrow.get(doors_time_string.strip() + " " + date_string.strip(), [r"h:mma \w+, MMMM +D, YYYY"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))  # 11:00pm Friday, July  8, 2016
 
         # title / event url (and performers)
         title_string = response.css('h1.page-title::text').extract()

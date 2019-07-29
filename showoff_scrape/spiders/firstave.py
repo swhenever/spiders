@@ -177,7 +177,7 @@ class FirstAveSpider(CrawlSpider):
         time_string_parts = time_string.split('at');
         time_string = time_string_parts[1]
 
-        date = arrow.get(date_string.strip() + " " + time_string.strip(), [r"dddd, MMMM D, YYYY h:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+        date = arrow.get(date_string.strip() + " " + time_string.strip(), [r"dddd, MMMM D, YYYY h:mma"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
         event_section.doorsDatetime = date
 
         # PERFORMANCES SECTION

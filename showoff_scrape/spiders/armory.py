@@ -62,16 +62,16 @@ class ArmorySpider(scrapy.spiders.Spider):
             date_parts = list(map(lambda x: x.strip(), re.split('<br.+?>', date_content)))
             time_parts = showspiderutils.check_text_for_times(date_parts[2])
             # see if this event is this year or next
-            test_date = arrow.get(now.format("YYYY") + " " + date_parts[1] + " " + time_parts[0], [r"YYYY MMMM Do H:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+            test_date = arrow.get(now.format("YYYY") + " " + date_parts[1] + " " + time_parts[0], [r"YYYY MMMM Do H:mma"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
             if test_date < now:
                 year_part = now.shift(years=-1).format("YYYY")
             else:
                 year_part = now.format("YYYY")
             if len(time_parts) > 1:
-                event_section.doorsDatetime = arrow.get(year_part + " " + date_parts[1] + " " + time_parts[0], [r"YYYY MMMM Do H:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
-                event_section.startDatetime = arrow.get(year_part + " " + date_parts[1] + " " + time_parts[1], [r"YYYY MMMM Do H:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+                event_section.doorsDatetime = arrow.get(year_part + " " + date_parts[1] + " " + time_parts[0], [r"YYYY MMMM Do H:mma"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
+                event_section.startDatetime = arrow.get(year_part + " " + date_parts[1] + " " + time_parts[1], [r"YYYY MMMM Do H:mma"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
             else:
-                event_section.startDatetime = arrow.get(year_part + " " + date_parts[1] + " " + time_parts[0], [r"YYYY MMMM Do H:mma"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+                event_section.startDatetime = arrow.get(year_part + " " + date_parts[1] + " " + time_parts[0], [r"YYYY MMMM Do H:mma"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
 
             # ticket purchase URL
             event_section.ticketPurchaseUrl = event.css('.btn-tickets::attr(href)').extract_first()

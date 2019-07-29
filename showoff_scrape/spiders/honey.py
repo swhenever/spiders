@@ -52,9 +52,9 @@ class HoneySpider(CrawlSpider):
         time_strings = response.css('.tribe-events-meta-group .tribe-events-start-time::text').extract_first().split('-')
         if len(time_strings) > 1:
             end_string = showspiderutils.time_normalize(showspiderutils.kill_unicode_and_strip(time_strings[1]))
-            event_section.endDatetime = arrow.get(end_string + " " + date_string, [r"h:mma YYYY-MM-DD"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+            event_section.endDatetime = arrow.get(end_string + " " + date_string, [r"h:mma YYYY-MM-DD"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
         start_string = showspiderutils.time_normalize(showspiderutils.kill_unicode_and_strip(time_strings[0]))
-        event_section.startDatetime = arrow.get(start_string + " " + date_string, [r"h:mma YYYY-MM-DD"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+        event_section.startDatetime = arrow.get(start_string + " " + date_string, [r"h:mma YYYY-MM-DD"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
 
         # title
         title_string = response.css('h1.tribe-events-single-event-title::text').extract_first()
