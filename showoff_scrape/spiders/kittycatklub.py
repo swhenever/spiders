@@ -57,7 +57,7 @@ class KittyCatKlubSpider(CrawlSpider):
         # time
         time_string = response.css('.eventitem time.event-time-12hr::text').extract_first() # H:MM PM
 
-        event_section.startDatetime = arrow.get(time_string + " " + date_string, [r"h:mm a YYYY-MM-DD"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+        event_section.startDatetime = arrow.get(time_string + " " + date_string, [r"h:mm a YYYY-MM-DD"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
 
         # description text
         description_soup = BeautifulSoup(response.css('.eventitem .eventitem-column-content').extract_first(), "lxml")

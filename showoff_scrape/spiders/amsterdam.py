@@ -96,13 +96,10 @@ class AmsterdamSpider(CrawlSpider):
         year_string = arrow.utcnow().format('YYYY')
         times = showspiderutils.check_text_for_times(metadata_string)
         if len(times) > 1:
-            event_section.doorsDatetime = arrow.get(date_string + " " + times[0] + year_string, [r"\w+, MMMM D h:mmaYYYY"],
-                                                    locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
-            event_section.startDatetime = arrow.get(date_string + " " + times[1] + year_string, [r"\w+, MMMM D h:mmaYYYY"],
-                                                    locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+            event_section.doorsDatetime = arrow.get(date_string + " " + times[0] + year_string, [r"\w+, MMMM D h:mmaYYYY"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
+            event_section.startDatetime = arrow.get(date_string + " " + times[1] + year_string, [r"\w+, MMMM D h:mmaYYYY"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
         elif len(times) == 1:
-            event_section.startDatetime = arrow.get(date_string + " " + times[0] + year_string, [r"\w+, MMMM D h:mmaYYYY"],
-                                                    locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+            event_section.startDatetime = arrow.get(date_string + " " + times[0] + year_string, [r"\w+, MMMM D h:mmaYYYY"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
         else:
             # If we can't find any times, ShowBill would be incomplete.
             # @todo some way of logging this perhaps

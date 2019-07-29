@@ -63,12 +63,12 @@ class SkywayTheatreSpider(CrawlSpider):
         times += showspiderutils.check_text_for_times(time_string)
         times = list(set(times))  # remove duplicates
         if len(times) == 1 and re.search(ur'door', time_string, re.IGNORECASE): 
-            event_section.doorsDatetime = arrow.get(times[0] + " " + date_string, [r"h:mma YYYY-M-D"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+            event_section.doorsDatetime = arrow.get(times[0] + " " + date_string, [r"h:mma YYYY-M-D"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
         elif len(times) == 1:
-            event_section.startDatetime = arrow.get(times[0] + " " + date_string, [r"h:mma YYYY-M-D"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+            event_section.startDatetime = arrow.get(times[0] + " " + date_string, [r"h:mma YYYY-M-D"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
         elif len(times) == 2:
-            event_section.doorsDatetime = arrow.get(times[0] + " " + date_string, [r"h:mma YYYY-M-D"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
-            event_section.startDatetime = arrow.get(times[1] + " " + date_string, [r"h:mma YYYY-M-D"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+            event_section.doorsDatetime = arrow.get(times[0] + " " + date_string, [r"h:mma YYYY-M-D"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
+            event_section.startDatetime = arrow.get(times[1] + " " + date_string, [r"h:mma YYYY-M-D"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
 
         # title
         title_string = response.css('.tribe-events-single-event-title::text').extract_first()

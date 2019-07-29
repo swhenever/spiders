@@ -68,7 +68,7 @@ class DakotaJazzClub(CrawlSpider):
         # time
         times = showspiderutils.check_text_for_times(meta_text)
         if len(times) > 0:
-            event_section.startDatetime = arrow.get(times[0] + " " + date_string, [r"h:mma dddd, MMM D, YYYY"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+            event_section.startDatetime = arrow.get(times[0] + " " + date_string, [r"h:mma dddd, MMM D, YYYY"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
         else:
             return [] # failed to parse a time, so we can't succeed with a showbill
 

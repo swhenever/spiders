@@ -81,13 +81,13 @@ class CaboozeSpider(CrawlSpider):
         if len(doors_string) > 0:
             doors_string = showspiderutils.kill_unicode_and_strip(doors_string[0])
             doors_string = re.search(ur'\d+:\d+ [ap]m', doors_string).group(0)  # 7:00 pm
-            doors_date = arrow.get(date_string + doors_string, [r"\w+, MMMM +D, YYYYh:mm a"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+            doors_date = arrow.get(date_string + doors_string, [r"\w+, MMMM +D, YYYYh:mm a"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
             event_section.doorsDatetime = doors_date
 
         start_string = response.css('div.event-info h2.times span.start::text').extract()  # Show: 8:00 pm
         start_string = showspiderutils.kill_unicode_and_strip(start_string[0])
         start_string = re.search(ur'\d+:\d+ [ap]m', start_string).group(0)  # 8:00 pm
-        start_date = arrow.get(date_string + start_string, [r"\w+, MMMM +D, YYYYh:mm a"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+        start_date = arrow.get(date_string + start_string, [r"\w+, MMMM +D, YYYYh:mm a"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
         event_section.startDatetime = start_date
 
         # PERFORMERS SECTION

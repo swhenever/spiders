@@ -64,7 +64,7 @@ class HookAndLadderSpider(CrawlSpider):
         if len(times) is 0:
             return [] # abort: need at least one event time
 
-        event_section.startDatetime = arrow.get(times[0] + " " + date_string, [r"h:mma YYYY-MM-DD"], locale='en').replace(tzinfo=dateutil.tz.gettz(self.timezone))
+        event_section.startDatetime = arrow.get(times[0] + " " + date_string, [r"h:mma YYYY-MM-DD"]).replace(tzinfo=dateutil.tz.gettz(self.timezone))
 
         # age restriction
         # get the event description and search for age info

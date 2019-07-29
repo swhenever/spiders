@@ -152,9 +152,9 @@ def parse_text_for_performers(text):
         #   for d in daterange_divs:
         #     daterange_string = d["content"]
         #     dates = daterange_string.split(" to ")
-        #     event_section.startDatetime = arrow.get(dates[0].strip(), locale='en').to(self.timezone)
+        #     event_section.startDatetime = arrow.get(dates[0].strip()).to(self.timezone)
         #     if len(dates) > 1:
-        #       event_section.endDatetime = arrow.get(dates[1].strip(), locale='en').to(self.timezone)
+        #       event_section.endDatetime = arrow.get(dates[1].strip()).to(self.timezone)
 
         #   ticket_links = commentsoup.find_all("li", {"data-testid": "event_ticket_link"})
         #   for t in ticket_links:
